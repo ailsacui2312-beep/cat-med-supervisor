@@ -1,0 +1,57 @@
+{
+  "expo": {
+    "name": "小猫吃药监督",
+    "slug": "cat-med-supervisor",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "scheme": "catmed",
+    "splash": {
+      "image": "./assets/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#FFF8F0"
+    },
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "com.catmed.app",
+      "infoPlist": {
+        "NSCameraUsageDescription": "用于拍摄药品照片以便识别",
+        "NSPhotoLibraryUsageDescription": "用于选择药品照片",
+        "ITSAppUsesNonExemptEncryption": false
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#FFF8F0"
+      },
+      "package": "com.catmed.app",
+      "permissions": [
+        "NOTIFICATIONS",
+        "VIBRATE",
+        "CAMERA"
+      ]
+    },
+    "plugins": [
+      "expo-router",
+      "expo-font",
+      "expo-notifications",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "用于选择药品照片",
+          "cameraPermission": "用于拍摄药品照片"
+        }
+      ],
+      "@react-native-community/datetimepicker"
+    ],
+    "web": {
+      "bundler": "metro",
+      "output": "single",
+      "favicon": "./assets/favicon.png"
+    },
+    "extra": {
+      "router": {}
+    }
+  }
+}
