@@ -1,22 +1,39 @@
 import { Tabs } from 'expo-router'
 import { View, Text, StyleSheet } from 'react-native'
+import { MaterialIcons } from '@expo/vector-icons'
 import { Colors } from '../../constants/colors'
+import { useMode } from '../../contexts/ModeContext'
 
-function TabIcon({ icon, label, focused }: { icon: string; label: string; focused: boolean }) {
+type IconName = 'today' | 'inventory-2' | 'person'
+
+function TabIcon({ icon, label, focused, isElder }: { icon: IconName; label: string; focused: boolean; isElder: boolean }) {
+  const iconSize = isElder ? 32 : 24
+  const labelSize = isElder ? 13 : 10
   return (
     <View style={styles.tabItem}>
-      <Text style={[styles.tabIcon, focused && styles.tabIconActive]}>{icon}</Text>
-      <Text style={[styles.tabLabel, focused && styles.tabLabelActive]}>{label}</Text>
+      <MaterialIcons
+        name={icon}
+        size={iconSize}
+        color={focused ? Colors.primary : Colors.textMuted}
+      />
+      <Text style={[
+        styles.tabLabel,
+        { fontSize: labelSize },
+        focused && styles.tabLabelActive,
+      ]}>{label}</Text>
     </View>
   )
 }
 
 export default function TabsLayout() {
+  const { isElder } = useMode()
+  const tabBarHeight = isElder ? 96 : 72
+
   return (
     <Tabs
       screenOptions={{
         headerShown: false,
-        tabBarStyle: styles.tabBar,
+        tabBarStyle: [styles.tabBar, { height: tabBarHeight }],
         tabBarShowLabel: false,
       }}
     >
@@ -24,7 +41,7 @@ export default function TabsLayout() {
         name="index"
         options={{
           tabBarIcon: ({ focused }) => (
-            <TabIcon icon="💊" label="今天" focused={focused} />
+            <TabIcon icon="today" label="今天" focused={focused} isElder={isElder} />
           ),
         }}
       />
@@ -32,15 +49,20 @@ export default function TabsLayout() {
         name="medications"
         options={{
           tabBarIcon: ({ focused }) => (
-            <TabIcon icon="🗄️" label="药柜" focused={focused} />
+            <TabIcon icon="inventory-2" label="药盒" focused={focused} isElder={isElder} />
           ),
         }}
       />
+      {/* History tab hidden from tab bar but still routable */}
       <Tabs.Screen
         name="history"
+        options={{ href: null }}
+      />
+      <Tabs.Screen
+        name="profile"
         options={{
           tabBarIcon: ({ focused }) => (
-            <TabIcon icon="📊" label="记录" focused={focused} />
+            <TabIcon icon="person" label="我的" focused={focused} isElder={isElder} />
           ),
         }}
       />
@@ -53,34 +75,27 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.bgCard,
     borderTopWidth: 1,
     borderTopColor: Colors.borderLight,
-    height: 72,
     paddingBottom: 12,
     paddingTop: 8,
     elevation: 8,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: -2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
+    shadowOpacity: 0.04,
+    shadowRadius: 12,
   },
   tabItem: {
     alignItems: 'center',
     justifyContent: 'center',
     gap: 2,
   },
-  tabIcon: {
-    fontSize: 22,
-    opacity: 0.5,
-  },
-  tabIconActive: {
-    opacity: 1,
-  },
   tabLabel: {
-    fontSize: 11,
     color: Colors.textMuted,
-    fontWeight: '500',
+    fontWeight: '600',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
   },
   tabLabelActive: {
     color: Colors.primary,
-    fontWeight: '600',
+    fontWeight: '700',
   },
 })

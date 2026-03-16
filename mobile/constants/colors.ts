@@ -1,35 +1,35 @@
 export const Colors = {
-  // Backgrounds
-  bgPrimary: '#FFF8F0',
-  bgSecondary: '#FFF3E6',
+  // Backgrounds — Stitch palette
+  bgPrimary: '#F8F7F5',
+  bgSecondary: '#FDFAF7',
   bgCard: '#FFFFFF',
-  bgInput: '#F5F0EB',
+  bgInput: '#F1F0EE',
 
   // Brand
-  primary: '#FF9F43',
-  primaryLight: '#FFD4A3',
+  primary: '#FF9E42',
+  primaryLight: '#FFF3E6',
   primaryDark: '#E8842A',
-  success: '#4CAF50',
-  danger: '#FF6B6B',
-  warning: '#FFD93D',
+  success: '#10B981',
+  danger: '#EF4444',
+  warning: '#F59E0B',
   info: '#6C9BD2',
 
-  // Text
-  textPrimary: '#2D2D2D',
-  textSecondary: '#666666',
-  textMuted: '#999999',
+  // Text — slate palette
+  textPrimary: '#0F172A',
+  textSecondary: '#64748B',
+  textMuted: '#94A3B8',
   textOnPrimary: '#FFFFFF',
 
   // Borders
-  border: '#E8E0D8',
-  borderLight: '#F0EBE5',
+  border: '#E2E8F0',
+  borderLight: '#F1F5F9',
 
   // Status
-  statusTaken: '#4CAF50',
-  statusPending: '#FF9F43',
-  statusMissed: '#FF6B6B',
-  statusSkipped: '#999999',
+  statusTaken: '#10B981',
+  statusPending: '#FF9E42',
+  statusMissed: '#EF4444',
+  statusSkipped: '#94A3B8',
 
-  // Pill colors (user selectable)
-  pillColors: ['#FF9F43', '#6C9BD2', '#4CAF50', '#FF6B6B', '#9B59B6', '#1ABC9C', '#F39C12', '#E74C3C'],
+  // Pill colors
+  pillColors: ['#FF6B6B', '#FF9E42', '#FFD93D', '#6BCB77', '#4D96FF', '#9B59B6', '#E74C3C', '#34495E'],
 }

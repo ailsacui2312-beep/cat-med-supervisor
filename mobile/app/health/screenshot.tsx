@@ -7,6 +7,7 @@ import { SafeAreaView } from 'react-native-safe-area-context'
 import { useRouter } from 'expo-router'
 import * as ImagePicker from 'expo-image-picker'
 import { readAsStringAsync } from 'expo-file-system'
+import { MaterialIcons } from '@expo/vector-icons'
 import { Colors } from '../../constants/colors'
 import { useAuth } from '../../hooks/useAuth'
 import { supabase } from '../../lib/supabase'
@@ -135,16 +136,20 @@ export default function ScreenshotScreen() {
         {/* Image selection */}
         {!imageUri ? (
           <View style={styles.selectArea}>
-            <Text style={styles.selectEmoji}>📸</Text>
+            <View style={styles.selectIconCircle}>
+              <MaterialIcons name="photo-camera" size={48} color={Colors.primary} />
+            </View>
             <Text style={styles.selectTitle}>选择血糖仪截图</Text>
             <Text style={styles.selectSubtitle}>
               支持欧态（Ottai）等CGM App的截图
             </Text>
             <View style={styles.buttonRow}>
               <TouchableOpacity style={styles.selectBtn} onPress={pickImage}>
+                <MaterialIcons name="photo-library" size={18} color={Colors.textOnPrimary} />
                 <Text style={styles.selectBtnText}>从相册选择</Text>
               </TouchableOpacity>
               <TouchableOpacity style={[styles.selectBtn, styles.selectBtnOutline]} onPress={takePhoto}>
+                <MaterialIcons name="camera-alt" size={18} color={Colors.primary} />
                 <Text style={[styles.selectBtnText, { color: Colors.primary }]}>拍照</Text>
               </TouchableOpacity>
             </View>
@@ -186,7 +191,10 @@ export default function ScreenshotScreen() {
                 <Text style={styles.resultTitle}>识别结果</Text>
 
                 <View style={styles.resultRow}>
-                  <Text style={styles.resultLabel}>{info.emoji} 血糖值</Text>
+                  <View style={styles.resultLabelRow}>
+                    <MaterialIcons name="colorize" size={16} color={info.color} />
+                    <Text style={styles.resultLabel}>血糖值</Text>
+                  </View>
                   <Text style={styles.resultValue}>
                     {result.blood_sugar} {result.unit || 'mmol/L'}
                   </Text>
@@ -199,7 +207,12 @@ export default function ScreenshotScreen() {
                       const status = info.normalRange(result.blood_sugar)
                       const text = status === 'low' ? '偏低' : status === 'high' ? '偏高' : '正常'
                       const color = status === 'low' ? Colors.warning : status === 'high' ? Colors.danger : Colors.success
-                      return <Text style={[styles.resultValue, { color }]}>{text}</Text>
+                      return (
+                        <View style={[styles.resultStatusBadge, { backgroundColor: color + '20' }]}>
+                          <MaterialIcons name="fiber-manual-record" size={8} color={color} />
+                          <Text style={[styles.resultStatusText, { color }]}>{text}</Text>
+                        </View>
+                      )
                     })()}
                   </View>
                 )}
@@ -224,6 +237,7 @@ export default function ScreenshotScreen() {
                   onPress={handleSave}
                   disabled={saving}
                 >
+                  <MaterialIcons name="save" size={18} color={Colors.textOnPrimary} />
                   <Text style={styles.saveBtnText}>
                     {saving ? '保存中...' : '确认保存'}
                   </Text>
@@ -269,9 +283,14 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  selectEmoji: {
-    fontSize: 64,
-    marginBottom: 16,
+  selectIconCircle: {
+    width: 96,
+    height: 96,
+    borderRadius: 48,
+    backgroundColor: Colors.primaryLight,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 20,
   },
   selectTitle: {
     fontSize: 20,
@@ -290,6 +309,9 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   selectBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
     backgroundColor: Colors.primary,
     paddingHorizontal: 24,
     paddingVertical: 12,
@@ -340,7 +362,7 @@ const styles = StyleSheet.create({
   },
   resultCard: {
     backgroundColor: Colors.bgCard,
-    borderRadius: 14,
+    borderRadius: 16,
     padding: 20,
     borderWidth: 1,
     borderColor: Colors.borderLight,
@@ -357,6 +379,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 12,
   },
+  resultLabelRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
   resultLabel: {
     fontSize: 14,
     color: Colors.textSecondary,
@@ -366,6 +393,18 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: Colors.textPrimary,
   },
+  resultStatusBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 10,
+  },
+  resultStatusText: {
+    fontSize: 13,
+    fontWeight: '600',
+  },
   confidenceText: {
     fontSize: 12,
     color: Colors.textMuted,
@@ -374,10 +413,13 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   saveBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
     backgroundColor: Colors.primary,
     paddingVertical: 12,
-    borderRadius: 12,
-    alignItems: 'center',
+    borderRadius: 14,
   },
   saveBtnText: {
     color: Colors.textOnPrimary,

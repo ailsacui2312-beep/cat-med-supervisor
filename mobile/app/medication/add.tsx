@@ -4,13 +4,14 @@ import {
   ScrollView, Alert, Image, Platform, KeyboardAvoidingView,
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
-import { useRouter } from 'expo-router'
+import { useRouter, useLocalSearchParams } from 'expo-router'
 import DateTimePicker from '@react-native-community/datetimepicker'
 import { format } from 'date-fns'
+import { MaterialIcons } from '@expo/vector-icons'
 import { Colors } from '../../constants/colors'
 import { useAuth } from '../../hooks/useAuth'
 import {
-  createMedication, pickImage, takePhoto,
+  createMedication, pickImage, takePhoto, uploadMedicationPhoto,
   FREQUENCY_LABELS, UNIT_OPTIONS,
 } from '../../lib/medications'
 import { createSchedule } from '../../lib/schedules'
@@ -38,8 +39,9 @@ const CYCLE_TYPES: CycleType[] = ['once', 'monthly', 'custom']
 export default function AddMedicationScreen() {
   const { user } = useAuth()
   const router = useRouter()
+  const params = useLocalSearchParams<{ name?: string }>()
 
-  const [name, setName] = useState('')
+  const [name, setName] = useState(params.name || '')
   const [dosage, setDosage] = useState('')
   const [unit, setUnit] = useState('粒')
   const [frequency, setFrequency] = useState<Frequency>('daily')
@@ -104,6 +106,17 @@ export default function AddMedicationScreen() {
         cycle_end_date: cycleType === 'once' && expiryDate ? format(expiryDate, 'yyyy-MM-dd') : undefined,
       } : {}
 
+      // Upload photo if selected
+      let photo_url: string | undefined
+      if (photoUri) {
+        try {
+          photo_url = await uploadMedicationPhoto(user.id, photoUri)
+        } catch (photoErr: any) {
+          console.warn('Photo upload failed:', photoErr.message)
+          // Continue without photo
+        }
+      }
+
       const med = await createMedication(user.id, {
         name: name.trim(),
         dosage: dosage.trim() || undefined,
@@ -112,6 +125,7 @@ export default function AddMedicationScreen() {
         expiry_date: expiryDate ? format(expiryDate, 'yyyy-MM-dd') : undefined,
         notes: notes.trim() || undefined,
         color,
+        photo_url,
         ...cycleFields,
       })
 
@@ -161,8 +175,15 @@ export default function AddMedicationScreen() {
               <Image source={{ uri: photoUri }} style={styles.photoImage} />
             ) : (
               <View style={styles.photoPlaceholder}>
-                <Text style={styles.photoIcon}>📸</Text>
-                <Text style={styles.photoText}>拍照记录药品</Text>
+                <View style={styles.photoIconCircle}>
+                  <MaterialIcons name="photo-camera" size={36} color={Colors.primary} />
+                </View>
+                <Text style={styles.photoTitle}>拍照记录药品</Text>
+                <Text style={styles.photoSubtitle}>上传药品照片以供AI识别</Text>
+                <View style={styles.photoButton}>
+                  <MaterialIcons name="add-a-photo" size={16} color="#FFFFFF" />
+                  <Text style={styles.photoButtonText}>立即拍摄</Text>
+                </View>
               </View>
             )}
           </TouchableOpacity>
@@ -316,16 +337,21 @@ export default function AddMedicationScreen() {
           {times.length > 0 && frequency !== 'as_needed' && (
             <View style={styles.field}>
               <Text style={styles.label}>提醒时间</Text>
-              {times.map((time, index) => (
-                <TouchableOpacity
-                  key={index}
-                  style={styles.timeButton}
-                  onPress={() => setShowTimePicker(index)}
-                >
-                  <Text style={styles.timeText}>{time}</Text>
-                  <Text style={styles.timeEdit}>修改</Text>
-                </TouchableOpacity>
-              ))}
+              <View style={styles.timeGrid}>
+                {times.map((time, index) => (
+                  <TouchableOpacity
+                    key={index}
+                    style={styles.timeButton}
+                    onPress={() => setShowTimePicker(index)}
+                  >
+                    <View style={styles.timeContent}>
+                      <MaterialIcons name="access-time" size={18} color={Colors.primary} />
+                      <Text style={styles.timeText}>{time}</Text>
+                    </View>
+                    <MaterialIcons name="close" size={18} color={Colors.textMuted} />
+                  </TouchableOpacity>
+                ))}
+              </View>
               {showTimePicker !== null && (
                 <DateTimePicker
                   value={(() => {
@@ -419,7 +445,8 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: 20,
-    paddingVertical: 12,
+    paddingVertical: 14,
+    backgroundColor: 'rgba(255, 255, 255, 0.80)',
     borderBottomWidth: 1,
     borderBottomColor: Colors.borderLight,
   },
@@ -429,61 +456,85 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     fontSize: 17,
-    fontWeight: '600',
+    fontWeight: '700',
     color: Colors.textPrimary,
   },
   saveText: {
     fontSize: 16,
     color: Colors.primary,
-    fontWeight: '600',
+    fontWeight: '700',
   },
   form: {
     padding: 20,
   },
   photoArea: {
-    alignSelf: 'center',
-    marginBottom: 24,
+    alignSelf: 'stretch',
+    marginBottom: 28,
   },
   photoPlaceholder: {
-    width: 100,
-    height: 100,
-    borderRadius: 16,
-    backgroundColor: Colors.bgInput,
+    borderRadius: 20,
+    backgroundColor: Colors.primary + '08',
     borderWidth: 2,
-    borderColor: Colors.border,
+    borderColor: Colors.primary + '30',
     borderStyle: 'dashed',
     justifyContent: 'center',
     alignItems: 'center',
+    paddingVertical: 28,
+    paddingHorizontal: 20,
   },
-  photoIcon: {
-    fontSize: 28,
+  photoIconCircle: {
+    width: 72,
+    height: 72,
+    borderRadius: 36,
+    backgroundColor: Colors.primary + '15',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  photoTitle: {
+    fontSize: 17,
+    fontWeight: '700',
+    color: Colors.textPrimary,
     marginBottom: 4,
   },
-  photoText: {
-    fontSize: 11,
+  photoSubtitle: {
+    fontSize: 13,
     color: Colors.textMuted,
+    marginBottom: 16,
+  },
+  photoButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: Colors.primary,
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 20,
+    gap: 6,
+  },
+  photoButtonText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#FFFFFF',
   },
   photoImage: {
-    width: 100,
-    height: 100,
-    borderRadius: 16,
+    width: '100%',
+    height: 200,
+    borderRadius: 20,
   },
   field: {
     marginBottom: 20,
   },
   label: {
-    fontSize: 14,
-    fontWeight: '600',
+    fontSize: 16,
+    fontWeight: '700',
     color: Colors.textPrimary,
     marginBottom: 8,
   },
   input: {
-    backgroundColor: Colors.bgCard,
-    borderWidth: 1,
-    borderColor: Colors.border,
-    borderRadius: 12,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
+    backgroundColor: '#F8FAFC',
+    borderWidth: 0,
+    borderRadius: 16,
+    padding: 16,
     fontSize: 16,
     color: Colors.textPrimary,
   },
@@ -505,58 +556,69 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   chip: {
-    paddingHorizontal: 14,
-    paddingVertical: 8,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
     borderRadius: 20,
-    backgroundColor: Colors.bgCard,
+    backgroundColor: Colors.primary + '15',
     borderWidth: 1,
-    borderColor: Colors.border,
+    borderColor: Colors.primary + '30',
   },
   chipSelected: {
     backgroundColor: Colors.primary,
     borderColor: Colors.primary,
   },
   chipText: {
-    fontSize: 13,
-    color: Colors.textSecondary,
+    fontSize: 14,
+    color: Colors.primary,
+    fontWeight: '500',
   },
   chipTextSelected: {
-    color: Colors.textOnPrimary,
+    color: '#FFFFFF',
     fontWeight: '600',
+  },
+  timeGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 10,
   },
   timeButton: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    backgroundColor: Colors.bgCard,
-    borderWidth: 1,
-    borderColor: Colors.border,
-    borderRadius: 12,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    marginBottom: 8,
+    backgroundColor: '#F8FAFC',
+    borderWidth: 0,
+    borderRadius: 16,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    width: '48%' as any,
+  },
+  timeContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
   },
   timeText: {
     fontSize: 20,
-    fontWeight: '600',
+    fontWeight: '700',
     color: Colors.textPrimary,
-  },
-  timeEdit: {
-    fontSize: 14,
-    color: Colors.primary,
   },
   colorRow: {
     flexDirection: 'row',
-    gap: 12,
+    gap: 14,
   },
   colorDot: {
     width: 32,
     height: 32,
     borderRadius: 16,
+    margin: 2,
   },
   colorDotSelected: {
     borderWidth: 3,
     borderColor: Colors.textPrimary,
+    margin: 0,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
   },
   sublabel: {
     fontSize: 13,
@@ -567,12 +629,12 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: Colors.textSecondary,
     alignSelf: 'flex-end',
-    paddingBottom: 14,
+    paddingBottom: 18,
   },
   rangeSuffix: {
     fontSize: 16,
     color: Colors.textSecondary,
     alignSelf: 'flex-end',
-    paddingBottom: 14,
+    paddingBottom: 18,
   },
 })

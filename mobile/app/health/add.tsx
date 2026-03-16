@@ -5,6 +5,7 @@ import {
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useRouter, useLocalSearchParams } from 'expo-router'
+import { MaterialIcons } from '@expo/vector-icons'
 import { Colors } from '../../constants/colors'
 import { useAuth } from '../../hooks/useAuth'
 import { createHealthRecord, HEALTH_TYPE_INFO } from '../../lib/health'
@@ -12,15 +13,21 @@ import type { HealthType } from '../../lib/types'
 
 const HEALTH_TYPES: HealthType[] = ['blood_sugar', 'blood_pressure', 'weight']
 
+const TYPE_ICONS: Record<HealthType, keyof typeof MaterialIcons.glyphMap> = {
+  blood_sugar: 'colorize',
+  blood_pressure: 'monitor-heart',
+  weight: 'monitor-weight',
+}
+
 export default function AddHealthScreen() {
   const router = useRouter()
   const { user } = useAuth()
-  const params = useLocalSearchParams<{ type?: string; source?: string }>()
+  const params = useLocalSearchParams<{ type?: string; source?: string; value?: string }>()
 
   const [type, setType] = useState<HealthType>(
     (params.type as HealthType) || 'blood_sugar'
   )
-  const [value1, setValue1] = useState('')
+  const [value1, setValue1] = useState(params.value || '')
   const [value2, setValue2] = useState('')
   const [notes, setNotes] = useState('')
   const [saving, setSaving] = useState(false)
@@ -74,7 +81,12 @@ export default function AddHealthScreen() {
             <Text style={styles.cancelText}>取消</Text>
           </TouchableOpacity>
           <Text style={styles.headerTitle}>记录身体数据</Text>
-          <TouchableOpacity onPress={handleSave} disabled={saving}>
+          <TouchableOpacity
+            style={[styles.saveBtn, saving && { opacity: 0.5 }]}
+            onPress={handleSave}
+            disabled={saving}
+          >
+            <MaterialIcons name="save" size={18} color={Colors.primary} />
             <Text style={[styles.saveText, saving && { opacity: 0.5 }]}>
               {saving ? '保存中...' : '保存'}
             </Text>
@@ -91,12 +103,16 @@ export default function AddHealthScreen() {
             <View style={styles.typeRow}>
               {HEALTH_TYPES.map(t => {
                 const tInfo = HEALTH_TYPE_INFO[t]
+                const selected = type === t
                 return (
                   <TouchableOpacity
                     key={t}
                     style={[
                       styles.typeCard,
-                      type === t && { borderColor: tInfo.color, backgroundColor: tInfo.color + '15' },
+                      selected && {
+                        borderColor: tInfo.color,
+                        backgroundColor: tInfo.color + '15',
+                      },
                     ]}
                     onPress={() => {
                       setType(t)
@@ -104,10 +120,16 @@ export default function AddHealthScreen() {
                       setValue2('')
                     }}
                   >
-                    <Text style={styles.typeEmoji}>{tInfo.emoji}</Text>
+                    <View style={[styles.typeIconCircle, { backgroundColor: tInfo.color + '15' }]}>
+                      <MaterialIcons
+                        name={TYPE_ICONS[t]}
+                        size={24}
+                        color={selected ? tInfo.color : Colors.textSecondary}
+                      />
+                    </View>
                     <Text style={[
                       styles.typeLabel,
-                      type === t && { color: tInfo.color, fontWeight: '700' },
+                      selected && { color: tInfo.color, fontWeight: '700' },
                     ]}>
                       {tInfo.label}
                     </Text>
@@ -167,6 +189,12 @@ export default function AddHealthScreen() {
                 const statusColor = status === 'low' ? Colors.warning : status === 'high' ? Colors.danger : Colors.success
                 return (
                   <View style={[styles.rangeBadge, { backgroundColor: statusColor + '20' }]}>
+                    <MaterialIcons
+                      name="fiber-manual-record"
+                      size={10}
+                      color={statusColor}
+                      style={{ marginRight: 4 }}
+                    />
                     <Text style={[styles.rangeText, { color: statusColor }]}>
                       {statusText}
                     </Text>
@@ -219,6 +247,11 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: Colors.textPrimary,
   },
+  saveBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
   saveText: {
     fontSize: 16,
     color: Colors.primary,
@@ -249,9 +282,13 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: Colors.borderLight,
   },
-  typeEmoji: {
-    fontSize: 28,
-    marginBottom: 4,
+  typeIconCircle: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 6,
   },
   typeLabel: {
     fontSize: 13,
@@ -264,10 +301,9 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   valueInput: {
-    backgroundColor: Colors.bgCard,
-    borderWidth: 1,
-    borderColor: Colors.border,
-    borderRadius: 12,
+    backgroundColor: '#F8FAFC',
+    borderWidth: 0,
+    borderRadius: 16,
     paddingHorizontal: 14,
     paddingVertical: 14,
     fontSize: 24,
@@ -282,10 +318,9 @@ const styles = StyleSheet.create({
     width: 60,
   },
   input: {
-    backgroundColor: Colors.bgCard,
-    borderWidth: 1,
-    borderColor: Colors.border,
-    borderRadius: 12,
+    backgroundColor: '#F8FAFC',
+    borderWidth: 0,
+    borderRadius: 16,
     paddingHorizontal: 14,
     paddingVertical: 12,
     fontSize: 16,
@@ -296,6 +331,8 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   rangeBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
     paddingHorizontal: 16,
     paddingVertical: 6,
     borderRadius: 12,

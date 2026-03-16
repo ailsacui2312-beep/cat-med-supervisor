@@ -5,33 +5,41 @@ import * as SplashScreen from 'expo-splash-screen'
 import { useAuth } from '../hooks/useAuth'
 import { View, StyleSheet } from 'react-native'
 import { Colors } from '../constants/colors'
+import { ModeProvider, useMode } from '../contexts/ModeContext'
 
 SplashScreen.preventAutoHideAsync()
 
-export default function RootLayout() {
+function RootNavigator() {
   const { user, loading } = useAuth()
+  const { mode, modeLoaded } = useMode()
   const segments = useSegments()
   const router = useRouter()
 
   useEffect(() => {
-    if (!loading) {
+    if (!loading && modeLoaded) {
       SplashScreen.hideAsync()
     }
-  }, [loading])
+  }, [loading, modeLoaded])
 
   useEffect(() => {
-    if (loading) return
+    if (loading || !modeLoaded) return
 
-    const inAuthGroup = segments[0] === '(auth)'
+    const segs = segments as string[]
+    const inAuthGroup = segs[0] === '(auth)'
 
     if (!user && !inAuthGroup) {
       router.replace('/(auth)/login')
     } else if (user && inAuthGroup) {
-      router.replace('/(tabs)')
+      // User is logged in but in auth group — check mode selection
+      if (mode === null && segs[1] !== 'mode-select') {
+        router.replace('/(auth)/mode-select')
+      } else if (mode !== null) {
+        router.replace('/(tabs)')
+      }
     }
-  }, [user, loading, segments])
+  }, [user, loading, segments, mode, modeLoaded])
 
-  if (loading) {
+  if (loading || !modeLoaded) {
     return (
       <View style={styles.loading}>
         <StatusBar style="dark" />
@@ -44,6 +52,14 @@ export default function RootLayout() {
       <StatusBar style="dark" />
       <Slot />
     </>
+  )
+}
+
+export default function RootLayout() {
+  return (
+    <ModeProvider>
+      <RootNavigator />
+    </ModeProvider>
   )
 }
 

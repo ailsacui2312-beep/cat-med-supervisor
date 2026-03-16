@@ -6,10 +6,17 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useLocalSearchParams, useRouter, useFocusEffect } from 'expo-router'
 import { format, parseISO } from 'date-fns'
+import { MaterialIcons } from '@expo/vector-icons'
 import { Colors } from '../../constants/colors'
 import { useAuth } from '../../hooks/useAuth'
 import { fetchHealthHistory, deleteHealthRecord, HEALTH_TYPE_INFO } from '../../lib/health'
 import type { HealthType, HealthRecord } from '../../lib/types'
+
+const TYPE_ICONS: Record<HealthType, keyof typeof MaterialIcons.glyphMap> = {
+  blood_sugar: 'colorize',
+  blood_pressure: 'monitor-heart',
+  weight: 'monitor-weight',
+}
 
 export default function HealthHistoryScreen() {
   const { type } = useLocalSearchParams<{ type: string }>()
@@ -78,6 +85,7 @@ export default function HealthHistoryScreen() {
         <View style={styles.cardLeft}>
           <Text style={styles.cardValue}>{info.format(item)}</Text>
           <View style={[styles.statusBadge, { backgroundColor: statusColor + '20' }]}>
+            <View style={[styles.statusDot, { backgroundColor: statusColor }]} />
             <Text style={[styles.statusText, { color: statusColor }]}>{statusText}</Text>
           </View>
         </View>
@@ -89,7 +97,10 @@ export default function HealthHistoryScreen() {
             {format(parseISO(item.measured_at), 'HH:mm')}
           </Text>
           {item.source === 'screenshot' && (
-            <Text style={styles.sourceTag}>截图识别</Text>
+            <View style={styles.sourceTagRow}>
+              <MaterialIcons name="photo-camera" size={10} color={Colors.primary} />
+              <Text style={styles.sourceTag}>截图识别</Text>
+            </View>
           )}
         </View>
         {item.notes && (
@@ -103,18 +114,35 @@ export default function HealthHistoryScreen() {
     <SafeAreaView style={styles.container} edges={['top']}>
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()}>
-          <Text style={styles.backText}>← 返回</Text>
+        <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
+          <MaterialIcons name="arrow-back" size={22} color={Colors.primary} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>{info.emoji} {info.label}记录</Text>
-        <TouchableOpacity onPress={() => router.push(`/health/add?type=${healthType}`)}>
-          <Text style={styles.addText}>+ 记录</Text>
+        <View style={styles.headerTitleRow}>
+          <MaterialIcons
+            name={TYPE_ICONS[healthType] || 'favorite'}
+            size={20}
+            color={info.color}
+          />
+          <Text style={styles.headerTitle}>{info.label}记录</Text>
+        </View>
+        <TouchableOpacity
+          style={styles.addBtn}
+          onPress={() => router.push(`/health/add?type=${healthType}`)}
+        >
+          <MaterialIcons name="add-circle" size={16} color={Colors.textOnPrimary} />
+          <Text style={styles.addText}>记录</Text>
         </TouchableOpacity>
       </View>
 
       {records.length === 0 ? (
         <View style={styles.empty}>
-          <Text style={styles.emptyEmoji}>{info.emoji}</Text>
+          <View style={styles.emptyIconCircle}>
+            <MaterialIcons
+              name={TYPE_ICONS[healthType] || 'favorite'}
+              size={48}
+              color={Colors.textMuted}
+            />
+          </View>
           <Text style={styles.emptyTitle}>暂无{info.label}记录</Text>
           <Text style={styles.emptySubtitle}>点击右上角添加第一条记录</Text>
         </View>
@@ -162,18 +190,31 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: Colors.borderLight,
   },
-  backText: {
-    fontSize: 16,
-    color: Colors.primary,
+  backBtn: {
+    padding: 4,
+  },
+  headerTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
   },
   headerTitle: {
     fontSize: 17,
     fontWeight: '600',
     color: Colors.textPrimary,
   },
+  addBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: Colors.primary,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+  },
   addText: {
-    fontSize: 14,
-    color: Colors.primary,
+    fontSize: 13,
+    color: Colors.textOnPrimary,
     fontWeight: '600',
   },
   list: {
@@ -208,9 +249,17 @@ const styles = StyleSheet.create({
     color: Colors.textPrimary,
   },
   statusBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
     paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: 8,
+    paddingVertical: 3,
+    borderRadius: 10,
+    gap: 4,
+  },
+  statusDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
   },
   statusText: {
     fontSize: 11,
@@ -228,10 +277,15 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: Colors.textMuted,
   },
+  sourceTagRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+    marginTop: 2,
+  },
   sourceTag: {
     fontSize: 10,
     color: Colors.primary,
-    marginTop: 2,
   },
   cardNotes: {
     fontSize: 12,
@@ -248,8 +302,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 40,
   },
-  emptyEmoji: {
-    fontSize: 64,
+  emptyIconCircle: {
+    width: 96,
+    height: 96,
+    borderRadius: 48,
+    backgroundColor: Colors.borderLight,
+    alignItems: 'center',
+    justifyContent: 'center',
     marginBottom: 16,
   },
   emptyTitle: {

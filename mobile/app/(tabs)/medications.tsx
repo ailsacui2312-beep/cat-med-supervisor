@@ -1,10 +1,11 @@
 import { useState, useEffect, useCallback } from 'react'
 import {
   View, Text, FlatList, TouchableOpacity, StyleSheet,
-  RefreshControl, Alert,
+  RefreshControl, Alert, Image,
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useRouter, useFocusEffect } from 'expo-router'
+import { MaterialIcons } from '@expo/vector-icons'
 import { Colors } from '../../constants/colors'
 import { useAuth } from '../../hooks/useAuth'
 import {
@@ -13,11 +14,19 @@ import {
 } from '../../lib/medications'
 import { getCycleStatusText } from '../../lib/cycles'
 import { fetchLatestAll, HEALTH_TYPE_INFO } from '../../lib/health'
+import { useMode } from '../../contexts/ModeContext'
 import type { MedicationWithSchedules, HealthType, HealthRecord } from '../../lib/types'
 import { format, differenceInDays, parseISO } from 'date-fns'
 
+const HEALTH_ICON_MAP: Record<HealthType, { name: keyof typeof MaterialIcons.glyphMap; bg: string; color: string }> = {
+  blood_sugar: { name: 'colorize', bg: '#FFF7ED', color: '#F97316' },
+  blood_pressure: { name: 'favorite', bg: '#FEF2F2', color: '#EF4444' },
+  weight: { name: 'monitor-weight', bg: '#EFF6FF', color: '#3B82F6' },
+}
+
 export default function MedicationsScreen() {
   const { user } = useAuth()
+  const { s, si } = useMode()
   const router = useRouter()
   const [medications, setMedications] = useState<MedicationWithSchedules[]>([])
   const [archivedMeds, setArchivedMeds] = useState<MedicationWithSchedules[]>([])
@@ -124,22 +133,29 @@ export default function MedicationsScreen() {
     const expiryInfo = getExpiryInfo(item.expiry_date)
     const cycleStatus = getCycleStatusText(item, new Date())
     const scheduleText = item.schedules
-      .filter(s => s.enabled)
-      .map(s => s.time_of_day.slice(0, 5))
+      .filter(sch => sch.enabled)
+      .map(sch => sch.time_of_day.slice(0, 5))
       .join('、')
 
     return (
       <TouchableOpacity
-        style={styles.card}
+        style={[styles.card, { borderRadius: s(14) }]}
         onPress={() => router.push(`/medication/${item.id}`)}
         onLongPress={() => handleArchive(item)}
       >
         <View style={[styles.colorBar, { backgroundColor: item.color }]} />
-        <View style={styles.cardContent}>
+        {item.photo_url ? (
+          <Image
+            source={{ uri: item.photo_url }}
+            style={[styles.medPhoto, { width: s(44), height: s(44), borderRadius: s(10), marginLeft: s(10) }]}
+          />
+        ) : null}
+        <View style={[styles.cardContent, { padding: s(14) }]}>
           <View style={styles.cardHeader}>
-            <Text style={styles.medName}>{item.name}</Text>
+            <Text style={[styles.medName, { fontSize: s(17) }]}>{item.name}</Text>
             {expiryInfo && (
-              <View style={[styles.expiryBadge, { backgroundColor: expiryInfo.color + '20' }]}>
+              <View style={[styles.expiryBadge, { backgroundColor: expiryInfo.color + '15' }]}>
+                <MaterialIcons name="warning" size={12} color={expiryInfo.color} style={{ marginRight: 3 }} />
                 <Text style={[styles.expiryText, { color: expiryInfo.color }]}>
                   {expiryInfo.text}
                 </Text>
@@ -152,45 +168,56 @@ export default function MedicationsScreen() {
             {FREQUENCY_LABELS[item.frequency]}
           </Text>
           {cycleStatus && (
-            <Text style={[styles.scheduleText, { color: Colors.primary }]}>
-              🔄 {cycleStatus}
-            </Text>
+            <View style={styles.scheduleRow}>
+              <MaterialIcons name="sync" size={13} color={Colors.primary} />
+              <Text style={[styles.scheduleText, { color: Colors.primary }]}>
+                {cycleStatus}
+              </Text>
+            </View>
           )}
           {scheduleText ? (
-            <Text style={styles.scheduleText}>⏰ {scheduleText}</Text>
+            <View style={styles.scheduleRow}>
+              <MaterialIcons name="schedule" size={13} color={Colors.textMuted} />
+              <Text style={styles.scheduleText}>{scheduleText}</Text>
+            </View>
           ) : (
-            <Text style={[styles.scheduleText, { color: Colors.warning }]}>
-              未设置提醒时间
-            </Text>
+            <View style={styles.scheduleRow}>
+              <MaterialIcons name="schedule" size={13} color={Colors.warning} />
+              <Text style={[styles.scheduleText, { color: Colors.warning }]}>
+                未设置提醒时间
+              </Text>
+            </View>
           )}
         </View>
-        <Text style={styles.chevron}>›</Text>
+        <MaterialIcons name="chevron-right" size={22} color={Colors.textMuted} style={{ marginRight: 12 }} />
       </TouchableOpacity>
     )
   }
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
-      <View style={styles.header}>
-        <Text style={styles.title}>药柜</Text>
+      <View style={[styles.header, { paddingHorizontal: s(20) }]}>
+        <Text style={[styles.title, { fontSize: s(24) }]}>药盒</Text>
         <TouchableOpacity
-          style={styles.addBtn}
+          style={[styles.addBtn, { paddingHorizontal: s(16), paddingVertical: s(8), borderRadius: s(20) }]}
           onPress={() => router.push('/medication/add')}
         >
-          <Text style={styles.addBtnText}>+ 添加</Text>
+          <MaterialIcons name="add" size={si(16)} color={Colors.textOnPrimary} />
+          <Text style={[styles.addBtnText, { fontSize: s(14) }]}>添加</Text>
         </TouchableOpacity>
       </View>
 
       {medications.length === 0 ? (
         <View style={styles.empty}>
-          <Text style={styles.emptyEmoji}>🗄️</Text>
-          <Text style={styles.emptyTitle}>药柜是空的</Text>
+          <MaterialIcons name="inventory-2" size={64} color={Colors.textMuted} />
+          <Text style={styles.emptyTitle}>药盒是空的</Text>
           <Text style={styles.emptySubtitle}>添加你正在服用的药品吧</Text>
           <TouchableOpacity
             style={styles.emptyBtn}
             onPress={() => router.push('/medication/add')}
           >
-            <Text style={styles.emptyBtnText}>+ 添加第一种药</Text>
+            <MaterialIcons name="add" size={18} color={Colors.textOnPrimary} />
+            <Text style={styles.emptyBtnText}>添加第一种药</Text>
           </TouchableOpacity>
         </View>
       ) : (
@@ -211,13 +238,18 @@ export default function MedicationsScreen() {
             <View style={styles.healthSection}>
               <View style={styles.healthHeader}>
                 <Text style={styles.healthTitle}>身体数据</Text>
-                <TouchableOpacity onPress={() => router.push('/health/add')}>
-                  <Text style={styles.healthAddText}>+ 记录</Text>
+                <TouchableOpacity
+                  style={styles.healthAddBtn}
+                  onPress={() => router.push('/health/add')}
+                >
+                  <MaterialIcons name="edit-note" size={16} color={Colors.primary} />
+                  <Text style={styles.healthAddText}>记录数据</Text>
                 </TouchableOpacity>
               </View>
               <View style={styles.healthCards}>
                 {(['blood_sugar', 'blood_pressure', 'weight'] as HealthType[]).map(type => {
                   const info = HEALTH_TYPE_INFO[type]
+                  const iconInfo = HEALTH_ICON_MAP[type]
                   const record = healthData[type]
                   const rangeStatus = record
                     ? info.normalRange(record.value1, record.value2)
@@ -231,13 +263,16 @@ export default function MedicationsScreen() {
                       style={styles.healthCard}
                       onPress={() => router.push(`/health/${type}`)}
                     >
-                      <Text style={styles.healthEmoji}>{info.emoji}</Text>
+                      <View style={[styles.healthIconCircle, { backgroundColor: iconInfo.bg }]}>
+                        <MaterialIcons name={iconInfo.name as any} size={20} color={iconInfo.color} />
+                      </View>
                       <Text style={styles.healthLabel}>{info.label}</Text>
                       {record ? (
                         <>
                           <Text style={[styles.healthValue, { color: rangeColor }]}>
                             {info.format(record)}
                           </Text>
+                          <Text style={styles.healthUnit}>{info.defaultUnit}</Text>
                           <Text style={styles.healthTime}>
                             {format(parseISO(record.measured_at), 'MM/dd HH:mm')}
                           </Text>
@@ -253,7 +288,8 @@ export default function MedicationsScreen() {
                 style={styles.screenshotBtn}
                 onPress={() => router.push('/health/screenshot')}
               >
-                <Text style={styles.screenshotBtnText}>📷 截图识别血糖</Text>
+                <MaterialIcons name="photo-camera" size={16} color={Colors.primary} />
+                <Text style={styles.screenshotBtnText}>截图识别血糖</Text>
               </TouchableOpacity>
             </View>
 
@@ -264,8 +300,13 @@ export default function MedicationsScreen() {
                 onPress={() => setShowArchived(!showArchived)}
               >
                 <Text style={styles.archivedToggleText}>
-                  已停用 ({archivedMeds.length}) {showArchived ? '▲' : '▼'}
+                  已停用 ({archivedMeds.length})
                 </Text>
+                <MaterialIcons
+                  name={showArchived ? 'keyboard-arrow-up' : 'keyboard-arrow-down'}
+                  size={20}
+                  color={Colors.textMuted}
+                />
               </TouchableOpacity>
               {showArchived && archivedMeds.map(med => (
                 <View key={med.id} style={[styles.card, { opacity: 0.6 }]}>
@@ -274,12 +315,12 @@ export default function MedicationsScreen() {
                     <Text style={styles.medName}>{med.name}</Text>
                     <Text style={styles.medDetail}>已停用</Text>
                   </View>
-                  <View style={{ flexDirection: 'row', gap: 8, paddingRight: 8 }}>
+                  <View style={styles.archivedActions}>
                     <TouchableOpacity onPress={() => handleRestore(med)}>
-                      <Text style={{ color: Colors.primary, fontSize: 13, fontWeight: '500' }}>恢复</Text>
+                      <Text style={styles.restoreText}>恢复</Text>
                     </TouchableOpacity>
                     <TouchableOpacity onPress={() => handleDelete(med)}>
-                      <Text style={{ color: Colors.danger, fontSize: 13 }}>删除</Text>
+                      <Text style={styles.deleteText}>删除</Text>
                     </TouchableOpacity>
                   </View>
                 </View>
@@ -305,6 +346,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingTop: 8,
     paddingBottom: 16,
+    backgroundColor: Colors.bgPrimary,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    elevation: 3,
+    zIndex: 10,
   },
   title: {
     fontSize: 24,
@@ -312,6 +360,9 @@ const styles = StyleSheet.create({
     color: Colors.textPrimary,
   },
   addBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
     backgroundColor: Colors.primary,
     paddingHorizontal: 16,
     paddingVertical: 8,
@@ -324,10 +375,11 @@ const styles = StyleSheet.create({
   },
   list: {
     paddingHorizontal: 20,
+    paddingTop: 8,
     paddingBottom: 24,
   },
   card: {
-    backgroundColor: Colors.bgCard,
+    backgroundColor: '#F8FAFC',
     borderRadius: 14,
     marginBottom: 12,
     flexDirection: 'row',
@@ -335,10 +387,22 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     borderWidth: 1,
     borderColor: Colors.borderLight,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.04,
+    shadowRadius: 4,
+    elevation: 1,
   },
   colorBar: {
-    width: 5,
+    width: 6,
     alignSelf: 'stretch',
+  },
+  medPhoto: {
+    width: 40,
+    height: 40,
+    borderRadius: 8,
+    marginLeft: 10,
+    marginRight: 4,
   },
   cardContent: {
     flex: 1,
@@ -355,6 +419,8 @@ const styles = StyleSheet.create({
     color: Colors.textPrimary,
   },
   expiryBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
     paddingHorizontal: 8,
     paddingVertical: 2,
     borderRadius: 8,
@@ -368,15 +434,15 @@ const styles = StyleSheet.create({
     color: Colors.textSecondary,
     marginTop: 4,
   },
+  scheduleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    marginTop: 4,
+  },
   scheduleText: {
     fontSize: 12,
     color: Colors.textMuted,
-    marginTop: 4,
-  },
-  chevron: {
-    fontSize: 22,
-    color: Colors.textMuted,
-    paddingRight: 14,
   },
   empty: {
     flex: 1,
@@ -384,14 +450,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 40,
   },
-  emptyEmoji: {
-    fontSize: 64,
-    marginBottom: 16,
-  },
   emptyTitle: {
     fontSize: 20,
     fontWeight: '600',
     color: Colors.textPrimary,
+    marginTop: 16,
     marginBottom: 8,
   },
   emptySubtitle: {
@@ -401,6 +464,9 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   emptyBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
     backgroundColor: Colors.primary,
     paddingHorizontal: 24,
     paddingVertical: 12,
@@ -413,9 +479,11 @@ const styles = StyleSheet.create({
   },
   healthSection: {
     marginTop: 24,
-    paddingTop: 20,
-    borderTopWidth: 1,
-    borderTopColor: Colors.borderLight,
+    backgroundColor: '#F8FAFC',
+    borderRadius: 20,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: Colors.borderLight,
   },
   healthHeader: {
     flexDirection: 'row',
@@ -428,8 +496,17 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: Colors.textPrimary,
   },
+  healthAddBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: Colors.primary + '15',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 20,
+  },
   healthAddText: {
-    fontSize: 14,
+    fontSize: 13,
     color: Colors.primary,
     fontWeight: '600',
   },
@@ -446,9 +523,13 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: Colors.borderLight,
   },
-  healthEmoji: {
-    fontSize: 24,
-    marginBottom: 4,
+  healthIconCircle: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 6,
   },
   healthLabel: {
     fontSize: 12,
@@ -460,6 +541,11 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '700',
     textAlign: 'center',
+  },
+  healthUnit: {
+    fontSize: 10,
+    color: '#94A3B8',
+    marginTop: 1,
   },
   healthTime: {
     fontSize: 10,
@@ -473,10 +559,13 @@ const styles = StyleSheet.create({
   },
   screenshotBtn: {
     marginTop: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
     backgroundColor: Colors.bgCard,
     borderRadius: 12,
     paddingVertical: 10,
-    alignItems: 'center',
     borderWidth: 1,
     borderColor: Colors.borderLight,
   },
@@ -492,12 +581,29 @@ const styles = StyleSheet.create({
     borderTopColor: Colors.borderLight,
   },
   archivedToggle: {
-    paddingVertical: 8,
+    flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
+    gap: 4,
+    paddingVertical: 8,
   },
   archivedToggleText: {
     fontSize: 14,
     color: Colors.textMuted,
     fontWeight: '500',
+  },
+  archivedActions: {
+    flexDirection: 'row',
+    gap: 8,
+    paddingRight: 12,
+  },
+  restoreText: {
+    color: Colors.primary,
+    fontSize: 13,
+    fontWeight: '500',
+  },
+  deleteText: {
+    color: Colors.danger,
+    fontSize: 13,
   },
 })
