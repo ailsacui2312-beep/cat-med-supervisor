@@ -17,6 +17,9 @@ import { fetchLatestAll, HEALTH_TYPE_INFO } from '../../lib/health'
 import { useMode } from '../../contexts/ModeContext'
 import type { MedicationWithSchedules, HealthType, HealthRecord } from '../../lib/types'
 import { format, differenceInDays, parseISO } from 'date-fns'
+import HealthRecordModal from '../../components/HealthRecordModal'
+import VoiceModal from '../../components/VoiceModal'
+import type { VoiceIntent } from '../../lib/voice'
 
 const HEALTH_ICON_MAP: Record<HealthType, { name: keyof typeof MaterialIcons.glyphMap; bg: string; color: string }> = {
   blood_sugar: { name: 'colorize', bg: '#FFF7ED', color: '#F97316' },
@@ -35,6 +38,31 @@ export default function MedicationsScreen() {
   const [healthData, setHealthData] = useState<Record<HealthType, HealthRecord | null>>({
     blood_sugar: null, blood_pressure: null, weight: null,
   })
+  const [healthModalVisible, setHealthModalVisible] = useState(false)
+  const [voiceVisible, setVoiceVisible] = useState(false)
+
+  const handleVoiceConfirm = (intent: VoiceIntent) => {
+    setVoiceVisible(false)
+    switch (intent.type) {
+      case 'ADD_MED': {
+        const addParams = new URLSearchParams({ name: intent.name })
+        if (intent.illness) addParams.set('illness', intent.illness)
+        if (intent.usage_note) addParams.set('usage_note', intent.usage_note)
+        router.push(`/medication/add?${addParams.toString()}`)
+        break
+      }
+      case 'ADD_HEALTH': {
+        const healthParams = intent.value
+          ? `/health/add?type=${intent.healthType}&value=${intent.value}`
+          : `/health/add?type=${intent.healthType}`
+        router.push(healthParams as any)
+        break
+      }
+      case 'MARK_TAKEN':
+        Alert.alert('提示', `请到首页标记「${intent.medication.name}」已服用`)
+        break
+    }
+  }
 
   const loadData = useCallback(async () => {
     if (!user) return
@@ -162,10 +190,17 @@ export default function MedicationsScreen() {
               </View>
             )}
           </View>
+          {item.illness && (
+            <View style={styles.illnessBadge}>
+              <MaterialIcons name="medical-services" size={11} color={Colors.primary} />
+              <Text style={styles.illnessText}>{item.illness}</Text>
+            </View>
+          )}
           <Text style={styles.medDetail}>
             {item.dosage ? `${item.dosage} ${item.unit}` : item.unit}
             {'  ·  '}
             {FREQUENCY_LABELS[item.frequency]}
+            {item.usage_note ? `  ·  ${item.usage_note}` : ''}
           </Text>
           {cycleStatus && (
             <View style={styles.scheduleRow}>
@@ -198,13 +233,21 @@ export default function MedicationsScreen() {
     <SafeAreaView style={styles.container} edges={['top']}>
       <View style={[styles.header, { paddingHorizontal: s(20) }]}>
         <Text style={[styles.title, { fontSize: s(24) }]}>药盒</Text>
-        <TouchableOpacity
-          style={[styles.addBtn, { paddingHorizontal: s(16), paddingVertical: s(8), borderRadius: s(20) }]}
-          onPress={() => router.push('/medication/add')}
-        >
-          <MaterialIcons name="add" size={si(16)} color={Colors.textOnPrimary} />
-          <Text style={[styles.addBtnText, { fontSize: s(14) }]}>添加</Text>
-        </TouchableOpacity>
+        <View style={styles.headerActions}>
+          <TouchableOpacity
+            style={[styles.voiceBtn, { width: s(36), height: s(36), borderRadius: s(18) }]}
+            onPress={() => setVoiceVisible(true)}
+          >
+            <MaterialIcons name="mic" size={si(18)} color={Colors.primary} />
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.addBtn, { paddingHorizontal: s(16), paddingVertical: s(8), borderRadius: s(20) }]}
+            onPress={() => router.push('/medication/add')}
+          >
+            <MaterialIcons name="add" size={si(16)} color={Colors.textOnPrimary} />
+            <Text style={[styles.addBtnText, { fontSize: s(14) }]}>添加</Text>
+          </TouchableOpacity>
+        </View>
       </View>
 
       {medications.length === 0 ? (
@@ -240,7 +283,7 @@ export default function MedicationsScreen() {
                 <Text style={styles.healthTitle}>身体数据</Text>
                 <TouchableOpacity
                   style={styles.healthAddBtn}
-                  onPress={() => router.push('/health/add')}
+                  onPress={() => setHealthModalVisible(true)}
                 >
                   <MaterialIcons name="edit-note" size={16} color={Colors.primary} />
                   <Text style={styles.healthAddText}>记录数据</Text>
@@ -330,6 +373,17 @@ export default function MedicationsScreen() {
           </>}
         />
       )}
+      <HealthRecordModal
+        visible={healthModalVisible}
+        onClose={() => setHealthModalVisible(false)}
+        onSaved={loadData}
+      />
+      <VoiceModal
+        visible={voiceVisible}
+        onClose={() => setVoiceVisible(false)}
+        onConfirm={handleVoiceConfirm}
+        medications={medications}
+      />
     </SafeAreaView>
   )
 }
@@ -358,6 +412,16 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontWeight: '700',
     color: Colors.textPrimary,
+  },
+  headerActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  voiceBtn: {
+    backgroundColor: Colors.primary + '15',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   addBtn: {
     flexDirection: 'row',
@@ -427,6 +491,22 @@ const styles = StyleSheet.create({
   },
   expiryText: {
     fontSize: 11,
+    fontWeight: '600',
+  },
+  illnessBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+    marginTop: 3,
+    alignSelf: 'flex-start',
+    backgroundColor: Colors.primary + '10',
+    borderRadius: 8,
+    paddingHorizontal: 7,
+    paddingVertical: 2,
+  },
+  illnessText: {
+    fontSize: 11,
+    color: Colors.primary,
     fontWeight: '600',
   },
   medDetail: {

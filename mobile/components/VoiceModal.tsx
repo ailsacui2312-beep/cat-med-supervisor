@@ -1,15 +1,19 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import {
   View, Text, TouchableOpacity, StyleSheet, Modal,
-  Animated, ActivityIndicator, Alert,
+  Animated, ActivityIndicator, Alert, TextInput,
+  KeyboardAvoidingView, Platform, ScrollView,
 } from 'react-native'
 import { MaterialIcons } from '@expo/vector-icons'
 import { Colors } from '../constants/colors'
 import { useMode } from '../contexts/ModeContext'
-import { transcribe, parseIntent, DEFAULT_CONFIG, type VoiceIntent } from '../lib/voice'
+import {
+  transcribe, smartParseIntent, DEFAULT_CONFIG,
+  type VoiceIntent, type ChatMessage,
+} from '../lib/voice'
 import type { Medication } from '../lib/types'
 
-type VoiceState = 'idle' | 'recording' | 'processing' | 'result' | 'error'
+type VoiceState = 'idle' | 'recording' | 'processing' | 'result' | 'conversation' | 'error'
 
 interface VoiceModalProps {
   visible: boolean
@@ -33,12 +37,14 @@ const HEALTH_LABELS: Record<string, string> = {
 }
 
 export default function VoiceModal({ visible, onClose, onConfirm, medications }: VoiceModalProps) {
-  const { isElder, s } = useMode()
+  const { isElder, s, si } = useMode()
   const [state, setState] = useState<VoiceState>('idle')
   const [intent, setIntent] = useState<VoiceIntent | null>(null)
   const [errorMsg, setErrorMsg] = useState('')
+  const [chatHistory, setChatHistory] = useState<ChatMessage[]>([])
+  const [catMessage, setCatMessage] = useState('')
+  const [userReply, setUserReply] = useState('')
   const pulseAnim = useRef(new Animated.Value(1)).current
-  // Audio recording ref — expo-av loaded lazily
   const recordingRef = useRef<any>(null)
 
   // Reset state when modal opens
@@ -47,7 +53,9 @@ export default function VoiceModal({ visible, onClose, onConfirm, medications }:
       setState('idle')
       setIntent(null)
       setErrorMsg('')
-      // Auto-start recording
+      setChatHistory([])
+      setCatMessage('')
+      setUserReply('')
       setTimeout(() => startRecording(), 300)
     } else {
       stopRecordingCleanup()
@@ -70,7 +78,6 @@ export default function VoiceModal({ visible, onClose, onConfirm, medications }:
 
   const startRecording = async () => {
     try {
-      // Dynamically import expo-av to handle cases where it's not installed
       const { Audio } = await import('expo-av')
       const permission = await Audio.requestPermissionsAsync()
       if (!permission.granted) {
@@ -82,27 +89,27 @@ export default function VoiceModal({ visible, onClose, onConfirm, medications }:
         allowsRecordingIOS: true,
         playsInSilentModeIOS: true,
       })
-      const { recording } = await Audio.Recording.createAsync(
-        {
-          android: {
-            extension: '.m4a',
-            outputFormat: 2,
-            audioEncoder: 3,
-            sampleRate: 16000,
-            numberOfChannels: 1,
-            bitRate: 128000,
-          },
-          ios: {
-            extension: '.m4a',
-            audioQuality: 127,
-            sampleRate: 16000,
-            numberOfChannels: 1,
-            bitRate: 128000,
-            outputFormat: 'aac',
-          },
-          web: {},
-        }
-      )
+      const { recording } = await Audio.Recording.createAsync({
+        android: {
+          extension: '.wav',
+          outputFormat: 2,
+          audioEncoder: 1,
+          sampleRate: 16000,
+          numberOfChannels: 1,
+          bitRate: 256000,
+        },
+        ios: {
+          extension: '.wav',
+          audioQuality: 127,
+          sampleRate: 16000,
+          numberOfChannels: 1,
+          bitRate: 256000,
+          linearPCMBitDepth: 16,
+          linearPCMIsBigEndian: false,
+          linearPCMIsFloat: false,
+        },
+        web: {},
+      })
       recordingRef.current = recording
       setState('recording')
     } catch (err: any) {
@@ -121,6 +128,27 @@ export default function VoiceModal({ visible, onClose, onConfirm, medications }:
     }
   }
 
+  // Process text through smart intent parsing (DeepSeek + fallback)
+  const processText = useCallback(async (text: string, history?: ChatMessage[]) => {
+    setState('processing')
+    try {
+      const parsed = await smartParseIntent(text, medications, history)
+      if (parsed.type === 'ASK') {
+        // Cat is asking a follow-up question
+        setCatMessage(parsed.message)
+        setChatHistory(parsed.history)
+        setUserReply('')
+        setState('conversation')
+      } else {
+        setIntent(parsed)
+        setState('result')
+      }
+    } catch (err: any) {
+      setErrorMsg(err.message || '识别失败')
+      setState('error')
+    }
+  }, [medications])
+
   const handleStopAndTranscribe = useCallback(async () => {
     if (state !== 'recording') return
     setState('processing')
@@ -136,19 +164,83 @@ export default function VoiceModal({ visible, onClose, onConfirm, medications }:
 
     try {
       const text = await transcribe(audioUri, DEFAULT_CONFIG)
-      const parsed = parseIntent(text, medications)
-      setIntent(parsed)
-      setState('result')
+      await processText(text)
     } catch (err: any) {
       setErrorMsg(err.message || '识别失败')
       setState('error')
     }
-  }, [state, medications])
+  }, [state, processText])
+
+  // Handle text reply in conversation mode
+  const handleSendReply = useCallback(async () => {
+    const reply = userReply.trim()
+    if (!reply) return
+    await processText(reply, chatHistory)
+  }, [userReply, chatHistory, processText])
+
+  // Handle voice reply in conversation mode
+  const handleVoiceReply = useCallback(() => {
+    setCatMessage('')
+    startRecordingForReply()
+  }, [])
+
+  const startRecordingForReply = async () => {
+    try {
+      const { Audio } = await import('expo-av')
+      await Audio.setAudioModeAsync({
+        allowsRecordingIOS: true,
+        playsInSilentModeIOS: true,
+      })
+      const { recording } = await Audio.Recording.createAsync({
+        android: {
+          extension: '.wav', outputFormat: 2, audioEncoder: 1,
+          sampleRate: 16000, numberOfChannels: 1, bitRate: 256000,
+        },
+        ios: {
+          extension: '.wav', audioQuality: 127, sampleRate: 16000,
+          numberOfChannels: 1, bitRate: 256000, linearPCMBitDepth: 16,
+          linearPCMIsBigEndian: false, linearPCMIsFloat: false,
+        },
+        web: {},
+      })
+      recordingRef.current = recording
+      setState('recording')
+    } catch (err: any) {
+      setErrorMsg('无法启动录音: ' + (err.message || '未知错误'))
+      setState('error')
+    }
+  }
+
+  // After recording reply, transcribe and continue conversation
+  const handleStopReplyRecording = useCallback(async () => {
+    if (state !== 'recording') return
+    setState('processing')
+
+    let audioUri = ''
+    try {
+      if (recordingRef.current) {
+        await recordingRef.current.stopAndUnloadAsync()
+        audioUri = recordingRef.current.getURI() || ''
+        recordingRef.current = null
+      }
+    } catch {}
+
+    try {
+      const text = await transcribe(audioUri, DEFAULT_CONFIG)
+      await processText(text, chatHistory)
+    } catch (err: any) {
+      setErrorMsg(err.message || '识别失败')
+      setState('error')
+    }
+  }, [state, chatHistory, processText])
 
   const handleRetry = () => {
     setState('idle')
     setIntent(null)
     setErrorMsg('')
+    setChatHistory([])
+    setCatMessage('')
+    setUserReply('')
     setTimeout(() => startRecording(), 300)
   }
 
@@ -178,11 +270,11 @@ export default function VoiceModal({ visible, onClose, onConfirm, medications }:
               正在听...
             </Text>
             <Text style={[styles.hintText, { fontSize: s(14) }]}>
-              说出你想要的操作
+              {chatHistory.length > 0 ? '回答小猫的问题吧～' : '说出你想要的操作'}
             </Text>
             <TouchableOpacity
               style={[styles.stopBtn, { paddingVertical: s(14), paddingHorizontal: s(36), borderRadius: s(28) }]}
-              onPress={handleStopAndTranscribe}
+              onPress={chatHistory.length > 0 ? handleStopReplyRecording : handleStopAndTranscribe}
             >
               <MaterialIcons name="stop" size={s(20)} color="#fff" />
               <Text style={[styles.stopBtnText, { fontSize: s(16) }]}>完成</Text>
@@ -195,9 +287,59 @@ export default function VoiceModal({ visible, onClose, onConfirm, medications }:
           <View style={styles.centerContent}>
             <ActivityIndicator size="large" color={Colors.primary} />
             <Text style={[styles.stateText, { fontSize: s(18), marginTop: s(20) }]}>
-              识别中...
+              {chatHistory.length > 0 ? '小猫思考中...' : '识别中...'}
             </Text>
           </View>
+        )
+
+      case 'conversation':
+        return (
+          <KeyboardAvoidingView
+            behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+            style={{ flex: 1 }}
+          >
+            <ScrollView style={styles.conversationContent} contentContainerStyle={styles.conversationScroll}>
+              {/* Cat message bubble */}
+              <View style={[styles.catBubble, { borderRadius: s(16), padding: s(16) }]}>
+                <Text style={[styles.catEmoji, { fontSize: s(32) }]}>🐱</Text>
+                <Text style={[styles.catText, { fontSize: s(16) }]}>
+                  {catMessage}
+                </Text>
+              </View>
+            </ScrollView>
+
+            {/* Reply input area */}
+            <View style={[styles.replyBar, { paddingHorizontal: s(16), paddingVertical: s(12) }]}>
+              <TextInput
+                style={[styles.replyInput, {
+                  fontSize: s(15), paddingHorizontal: s(16), paddingVertical: s(10),
+                  borderRadius: s(24),
+                }]}
+                placeholder="输入回复..."
+                placeholderTextColor={Colors.textMuted}
+                value={userReply}
+                onChangeText={setUserReply}
+                returnKeyType="send"
+                onSubmitEditing={handleSendReply}
+              />
+              <TouchableOpacity
+                style={[styles.voiceReplyBtn, { width: s(42), height: s(42), borderRadius: s(21) }]}
+                onPress={handleVoiceReply}
+              >
+                <MaterialIcons name="mic" size={si(20)} color={Colors.primary} />
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.sendBtn, {
+                  width: s(42), height: s(42), borderRadius: s(21),
+                  opacity: userReply.trim() ? 1 : 0.4,
+                }]}
+                onPress={handleSendReply}
+                disabled={!userReply.trim()}
+              >
+                <MaterialIcons name="send" size={si(20)} color="#fff" />
+              </TouchableOpacity>
+            </View>
+          </KeyboardAvoidingView>
         )
 
       case 'result':
@@ -211,11 +353,31 @@ export default function VoiceModal({ visible, onClose, onConfirm, medications }:
                 color={intent.type === 'UNKNOWN' ? Colors.warning : Colors.success}
               />
               <Text style={[styles.resultType, { fontSize: s(14) }]}>
-                {INTENT_LABELS[intent.type]}
+                {INTENT_LABELS[intent.type] || intent.type}
               </Text>
               <Text style={[styles.resultDetail, { fontSize: s(20) }]}>
                 {getIntentDescription(intent)}
               </Text>
+              {/* Show extra info for ADD_MED from LLM */}
+              {intent.type === 'ADD_MED' && (intent.dosage || intent.usage_note || intent.illness) && (
+                <View style={[styles.extraInfo, { marginTop: s(8) }]}>
+                  {intent.illness && (
+                    <Text style={[styles.extraText, { fontSize: s(12) }]}>
+                      🏥 {intent.illness}
+                    </Text>
+                  )}
+                  {intent.dosage && (
+                    <Text style={[styles.extraText, { fontSize: s(12) }]}>
+                      💊 {intent.dosage}
+                    </Text>
+                  )}
+                  {intent.usage_note && (
+                    <Text style={[styles.extraText, { fontSize: s(12) }]}>
+                      📋 {intent.usage_note}
+                    </Text>
+                  )}
+                </View>
+              )}
             </View>
 
             <View style={styles.resultActions}>
@@ -297,7 +459,9 @@ export default function VoiceModal({ visible, onClose, onConfirm, medications }:
           </TouchableOpacity>
 
           {/* Title */}
-          <Text style={[styles.title, { fontSize: s(20) }]}>语音输入</Text>
+          <Text style={[styles.title, { fontSize: s(20) }]}>
+            {state === 'conversation' ? '🐱 小猫助手' : '语音输入'}
+          </Text>
 
           {renderContent()}
         </View>
@@ -316,6 +480,8 @@ function getIntentDescription(intent: VoiceIntent): string {
         : `记录${HEALTH_LABELS[intent.healthType] || intent.healthType}`
     case 'MARK_TAKEN':
       return `吃了「${intent.medication.name}」`
+    case 'ASK':
+      return intent.message
     case 'UNKNOWN':
       return `"${intent.rawText}"`
   }
@@ -331,6 +497,7 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.bgPrimary,
     paddingTop: 16,
     minHeight: 400,
+    maxHeight: '85%',
   },
   closeBtn: {
     position: 'absolute',
@@ -380,6 +547,57 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontWeight: '600',
   },
+
+  // ── Conversation (Cat chat) ──
+  conversationContent: {
+    flex: 1,
+    paddingHorizontal: 16,
+  },
+  conversationScroll: {
+    paddingVertical: 8,
+  },
+  catBubble: {
+    backgroundColor: '#FFF7ED',
+    borderWidth: 1,
+    borderColor: '#FFEDD5',
+    alignItems: 'center',
+  },
+  catEmoji: {
+    marginBottom: 8,
+  },
+  catText: {
+    color: Colors.textPrimary,
+    fontWeight: '500',
+    textAlign: 'center',
+    lineHeight: 24,
+  },
+  replyBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    borderTopWidth: 1,
+    borderTopColor: Colors.borderLight,
+    backgroundColor: Colors.bgCard,
+  },
+  replyInput: {
+    flex: 1,
+    backgroundColor: Colors.bgInput,
+    color: Colors.textPrimary,
+    borderWidth: 1,
+    borderColor: Colors.borderLight,
+  },
+  voiceReplyBtn: {
+    backgroundColor: Colors.primary + '15',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  sendBtn: {
+    backgroundColor: Colors.primary,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+
+  // ── Result ──
   resultContent: {
     paddingHorizontal: 24,
     paddingVertical: 16,
@@ -405,6 +623,21 @@ const styles = StyleSheet.create({
     color: Colors.textPrimary,
     marginTop: 8,
     textAlign: 'center',
+  },
+  extraInfo: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    justifyContent: 'center',
+  },
+  extraText: {
+    color: Colors.textSecondary,
+    fontWeight: '500',
+    backgroundColor: Colors.primary + '10',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 8,
+    overflow: 'hidden',
   },
   resultActions: {
     flexDirection: 'row',

@@ -14,6 +14,8 @@ export interface Medication {
   photo_url: string | null
   barcode: string | null
   expiry_date: string | null
+  illness: string | null       // 治疗病症，如 "感冒"、"高血压"
+  usage_note: string | null    // 服用方式，如 "饭后服用"、"空腹服用"
   notes: string | null
   color: string
   is_active: boolean

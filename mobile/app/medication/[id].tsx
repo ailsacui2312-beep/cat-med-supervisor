@@ -11,11 +11,13 @@ import {
   fetchMedication, archiveMedication, FREQUENCY_LABELS,
 } from '../../lib/medications'
 import { updateSchedule } from '../../lib/schedules'
+import { useMode } from '../../contexts/ModeContext'
 import type { MedicationWithSchedules } from '../../lib/types'
 
 export default function MedicationDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>()
   const router = useRouter()
+  const { s, si } = useMode()
   const [med, setMed] = useState<MedicationWithSchedules | null>(null)
 
   const loadData = useCallback(() => {
@@ -69,74 +71,80 @@ export default function MedicationDetailScreen() {
   return (
     <SafeAreaView style={styles.container}>
       {/* Header */}
-      <View style={styles.header}>
+      <View style={[styles.header, { paddingHorizontal: s(20) }]}>
         <TouchableOpacity onPress={() => router.back()}>
-          <Text style={styles.backText}>← 返回</Text>
+          <Text style={[styles.backText, { fontSize: s(16) }]}>← 返回</Text>
         </TouchableOpacity>
         <TouchableOpacity onPress={() => router.push(`/medication/edit?id=${med.id}`)}>
-          <Text style={styles.editText}>编辑</Text>
+          <Text style={[styles.editText, { fontSize: s(16) }]}>编辑</Text>
         </TouchableOpacity>
       </View>
 
-      <ScrollView contentContainerStyle={styles.content}>
+      <ScrollView contentContainerStyle={[styles.content, { padding: s(20) }]}>
         {/* Main info */}
-        <View style={styles.mainCard}>
+        <View style={[styles.mainCard, { borderRadius: s(16) }]}>
           <View style={[styles.colorBand, { backgroundColor: med.color }]} />
-          <View style={styles.mainInfo}>
+          <View style={[styles.mainInfo, { padding: s(20) }]}>
             {med.photo_url && (
-              <Image source={{ uri: med.photo_url }} style={styles.photo} />
+              <Image source={{ uri: med.photo_url }} style={[styles.photo, { width: s(80), height: s(80), borderRadius: s(12) }]} />
             )}
-            <Text style={styles.medName}>{med.name}</Text>
+            <Text style={[styles.medName, { fontSize: s(24) }]}>{med.name}</Text>
+            {med.illness && (
+              <Text style={{ fontSize: s(14), color: Colors.primary, fontWeight: '600', marginBottom: 4 }}>
+                {med.illness}
+              </Text>
+            )}
             {med.dosage && (
-              <Text style={styles.medDosage}>
+              <Text style={[styles.medDosage, { fontSize: s(16) }]}>
                 {med.dosage} {med.unit}
               </Text>
             )}
-            <Text style={styles.medFreq}>
+            <Text style={[styles.medFreq, { fontSize: s(14) }]}>
               {FREQUENCY_LABELS[med.frequency]}
+              {med.usage_note ? `  ·  ${med.usage_note}` : ''}
             </Text>
           </View>
         </View>
 
         {/* Schedule */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>提醒时间</Text>
+        <View style={[styles.section, { borderRadius: s(14), padding: s(16) }]}>
+          <Text style={[styles.sectionTitle, { fontSize: s(13) }]}>提醒时间</Text>
           {med.schedules.length > 0 ? (
-            med.schedules.map(s => (
-              <View key={s.id} style={styles.scheduleRow}>
+            med.schedules.map(sch => (
+              <View key={sch.id} style={styles.scheduleRow}>
                 <View style={{ flex: 1 }}>
-                  <Text style={[styles.scheduleTime, !s.enabled && { color: Colors.textMuted }]}>
-                    ⏰ {s.time_of_day.slice(0, 5)}
+                  <Text style={[styles.scheduleTime, { fontSize: s(18) }, !sch.enabled && { color: Colors.textMuted }]}>
+                    ⏰ {sch.time_of_day.slice(0, 5)}
                   </Text>
-                  <Text style={styles.scheduleDays}>
-                    {s.days_of_week.length === 7 ? '每天' :
-                      s.days_of_week.map(d => '日一二三四五六'[d]).join(' ')}
+                  <Text style={[styles.scheduleDays, { fontSize: s(13) }]}>
+                    {sch.days_of_week.length === 7 ? '每天' :
+                      sch.days_of_week.map(d => '日一二三四五六'[d]).join(' ')}
                   </Text>
                 </View>
                 <Switch
-                  value={s.enabled}
-                  onValueChange={(val) => handleToggleSchedule(s.id, val)}
+                  value={sch.enabled}
+                  onValueChange={(val) => handleToggleSchedule(sch.id, val)}
                   trackColor={{ true: Colors.primary }}
                 />
               </View>
             ))
           ) : (
-            <Text style={styles.noSchedule}>未设置提醒</Text>
+            <Text style={[styles.noSchedule, { fontSize: s(14) }]}>未设置提醒</Text>
           )}
         </View>
 
         {/* Expiry */}
         {med.expiry_date && (
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>有效期</Text>
+          <View style={[styles.section, { borderRadius: s(14), padding: s(16) }]}>
+            <Text style={[styles.sectionTitle, { fontSize: s(13) }]}>有效期</Text>
             <View style={styles.expiryRow}>
-              <Text style={styles.expiryDate}>
+              <Text style={[styles.expiryDate, { fontSize: s(16) }]}>
                 {format(parseISO(med.expiry_date), 'yyyy年M月d日')}
               </Text>
               {expiryDays !== null && (
                 <Text style={[
                   styles.expiryDays,
-                  { color: expiryDays < 0 ? Colors.danger : expiryDays < 30 ? Colors.warning : Colors.success },
+                  { fontSize: s(14), color: expiryDays < 0 ? Colors.danger : expiryDays < 30 ? Colors.warning : Colors.success },
                 ]}>
                   {expiryDays < 0 ? '已过期' : `还有 ${expiryDays} 天`}
                 </Text>
@@ -147,15 +155,15 @@ export default function MedicationDetailScreen() {
 
         {/* Notes */}
         {med.notes && (
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>备注</Text>
-            <Text style={styles.notesText}>{med.notes}</Text>
+          <View style={[styles.section, { borderRadius: s(14), padding: s(16) }]}>
+            <Text style={[styles.sectionTitle, { fontSize: s(13) }]}>备注</Text>
+            <Text style={[styles.notesText, { fontSize: s(15) }]}>{med.notes}</Text>
           </View>
         )}
 
         {/* Actions */}
-        <TouchableOpacity style={styles.archiveBtn} onPress={handleArchive}>
-          <Text style={styles.archiveBtnText}>停用此药品</Text>
+        <TouchableOpacity style={[styles.archiveBtn, { paddingVertical: s(14), borderRadius: s(12) }]} onPress={handleArchive}>
+          <Text style={[styles.archiveBtnText, { fontSize: s(16) }]}>停用此药品</Text>
         </TouchableOpacity>
       </ScrollView>
     </SafeAreaView>

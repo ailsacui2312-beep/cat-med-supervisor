@@ -1,6 +1,7 @@
 import { supabase } from './supabase'
 import type { Medication, MedicationWithSchedules, Frequency } from './types'
 import * as ImagePicker from 'expo-image-picker'
+import { File as ExpoFile } from 'expo-file-system'
 
 export async function fetchMedications(userId: string): Promise<MedicationWithSchedules[]> {
   const { data, error } = await supabase
@@ -30,6 +31,8 @@ export interface CreateMedicationInput {
   dosage?: string
   unit?: string
   frequency?: Frequency
+  illness?: string
+  usage_note?: string
   expiry_date?: string
   notes?: string
   color?: string
@@ -55,6 +58,8 @@ export async function createMedication(
       dosage: input.dosage || null,
       unit: input.unit || '粒',
       frequency: input.frequency || 'daily',
+      illness: input.illness || null,
+      usage_note: input.usage_note || null,
       expiry_date: input.expiry_date || null,
       notes: input.notes || null,
       color: input.color || '#FF9F43',
@@ -132,23 +137,37 @@ export async function uploadMedicationPhoto(
   userId: string,
   uri: string
 ): Promise<string> {
-  const ext = uri.split('.').pop() || 'jpg'
+  const ext = uri.split('.').pop()?.toLowerCase() || 'jpg'
   const fileName = `${userId}/${Date.now()}.${ext}`
+  const contentType = `image/${ext === 'jpg' ? 'jpeg' : ext}`
 
-  const response = await fetch(uri)
-  const blob = await response.blob()
+  // Use expo-file-system File class — it implements Blob interface
+  const file = new ExpoFile(uri)
+  const arrayBuffer = await file.arrayBuffer()
 
   const { error: uploadError } = await supabase.storage
     .from('medication-photos')
-    .upload(fileName, blob, { contentType: `image/${ext}` })
+    .upload(fileName, arrayBuffer, {
+      contentType,
+      upsert: true,
+    })
 
   if (uploadError) throw uploadError
 
-  const { data } = supabase.storage
+  // Create a signed URL (bucket is private)
+  const { data: signedData, error: signError } = await supabase.storage
     .from('medication-photos')
-    .getPublicUrl(fileName)
+    .createSignedUrl(fileName, 60 * 60 * 24 * 365) // 1 year
 
-  return data.publicUrl
+  if (signError || !signedData) {
+    // Fallback to public URL
+    const { data } = supabase.storage
+      .from('medication-photos')
+      .getPublicUrl(fileName)
+    return data.publicUrl
+  }
+
+  return signedData.signedUrl
 }
 
 export async function pickImage(): Promise<string | null> {

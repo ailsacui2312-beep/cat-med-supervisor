@@ -17,6 +17,7 @@ import {
 import { createSchedule } from '../../lib/schedules'
 import { setupNotifications, scheduleMedicationReminder } from '../../lib/notifications'
 import type { Frequency, CycleType } from '../../lib/types'
+import { useMode } from '../../contexts/ModeContext'
 
 const FREQUENCIES: Frequency[] = ['daily', 'twice_daily', 'three_daily', 'weekly', 'as_needed', 'cycle']
 const DEFAULT_TIMES: Record<Frequency, string[]> = {
@@ -38,13 +39,16 @@ const CYCLE_TYPES: CycleType[] = ['once', 'monthly', 'custom']
 
 export default function AddMedicationScreen() {
   const { user } = useAuth()
+  const { s, si } = useMode()
   const router = useRouter()
-  const params = useLocalSearchParams<{ name?: string }>()
+  const params = useLocalSearchParams<{ name?: string; illness?: string; usage_note?: string }>()
 
   const [name, setName] = useState(params.name || '')
+  const [illness, setIllness] = useState(params.illness || '')
   const [dosage, setDosage] = useState('')
   const [unit, setUnit] = useState('粒')
   const [frequency, setFrequency] = useState<Frequency>('daily')
+  const [usageNote, setUsageNote] = useState(params.usage_note || '')
   const [notes, setNotes] = useState('')
   const [color, setColor] = useState(Colors.pillColors[0])
   const [photoUri, setPhotoUri] = useState<string | null>(null)
@@ -119,9 +123,11 @@ export default function AddMedicationScreen() {
 
       const med = await createMedication(user.id, {
         name: name.trim(),
+        illness: illness.trim() || undefined,
         dosage: dosage.trim() || undefined,
         unit,
         frequency,
+        usage_note: usageNote.trim() || undefined,
         expiry_date: expiryDate ? format(expiryDate, 'yyyy-MM-dd') : undefined,
         notes: notes.trim() || undefined,
         color,
@@ -153,13 +159,13 @@ export default function AddMedicationScreen() {
         style={{ flex: 1 }}
       >
         {/* Header */}
-        <View style={styles.header}>
+        <View style={[styles.header, { paddingHorizontal: s(20), paddingVertical: s(14) }]}>
           <TouchableOpacity onPress={() => router.back()}>
-            <Text style={styles.cancelText}>取消</Text>
+            <Text style={[styles.cancelText, { fontSize: s(16) }]}>取消</Text>
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>添加药品</Text>
+          <Text style={[styles.headerTitle, { fontSize: s(17) }]}>添加药品</Text>
           <TouchableOpacity onPress={handleSave} disabled={saving}>
-            <Text style={[styles.saveText, saving && { opacity: 0.5 }]}>
+            <Text style={[styles.saveText, { fontSize: s(16) }, saving && { opacity: 0.5 }]}>
               {saving ? '保存中...' : '保存'}
             </Text>
           </TouchableOpacity>
@@ -190,9 +196,9 @@ export default function AddMedicationScreen() {
 
           {/* Name */}
           <View style={styles.field}>
-            <Text style={styles.label}>药品名称 *</Text>
+            <Text style={[styles.label, { fontSize: s(16) }]}>药品名称 *</Text>
             <TextInput
-              style={styles.input}
+              style={[styles.input, { fontSize: s(16), padding: s(16), borderRadius: s(16) }]}
               placeholder="如：布洛芬、阿莫西林"
               placeholderTextColor={Colors.textMuted}
               value={name}
@@ -200,20 +206,32 @@ export default function AddMedicationScreen() {
             />
           </View>
 
+          {/* Illness / 治疗病症 */}
+          <View style={styles.field}>
+            <Text style={[styles.label, { fontSize: s(16) }]}>治疗病症</Text>
+            <TextInput
+              style={[styles.input, { fontSize: s(16), padding: s(16), borderRadius: s(16) }]}
+              placeholder="如：感冒、高血压、糖尿病"
+              placeholderTextColor={Colors.textMuted}
+              value={illness}
+              onChangeText={setIllness}
+            />
+          </View>
+
           {/* Dosage + Unit */}
           <View style={styles.row}>
             <View style={[styles.field, { flex: 1 }]}>
-              <Text style={styles.label}>剂量</Text>
+              <Text style={[styles.label, { fontSize: s(16) }]}>剂量</Text>
               <TextInput
-                style={styles.input}
+                style={[styles.input, { fontSize: s(16), padding: s(16), borderRadius: s(16) }]}
                 placeholder="如：200mg"
                 placeholderTextColor={Colors.textMuted}
                 value={dosage}
                 onChangeText={setDosage}
               />
             </View>
-            <View style={[styles.field, { width: 120 }]}>
-              <Text style={styles.label}>单位</Text>
+            <View style={[styles.field, { width: s(120) }]}>
+              <Text style={[styles.label, { fontSize: s(16) }]}>单位</Text>
               <ScrollView horizontal showsHorizontalScrollIndicator={false}>
                 <View style={styles.chipRow}>
                   {UNIT_OPTIONS.map(u => (
@@ -234,7 +252,7 @@ export default function AddMedicationScreen() {
 
           {/* Frequency */}
           <View style={styles.field}>
-            <Text style={styles.label}>频率</Text>
+            <Text style={[styles.label, { fontSize: s(16) }]}>频率</Text>
             <View style={styles.chipRow}>
               {FREQUENCIES.map(f => (
                 <TouchableOpacity
@@ -253,7 +271,7 @@ export default function AddMedicationScreen() {
           {/* Cycle Settings */}
           {frequency === 'cycle' && (
             <View style={styles.field}>
-              <Text style={styles.label}>周期类型</Text>
+              <Text style={[styles.label, { fontSize: s(16) }]}>周期类型</Text>
               <View style={styles.chipRow}>
                 {CYCLE_TYPES.map(ct => (
                   <TouchableOpacity
@@ -336,7 +354,7 @@ export default function AddMedicationScreen() {
           {/* Times */}
           {times.length > 0 && frequency !== 'as_needed' && (
             <View style={styles.field}>
-              <Text style={styles.label}>提醒时间</Text>
+              <Text style={[styles.label, { fontSize: s(16) }]}>提醒时间</Text>
               <View style={styles.timeGrid}>
                 {times.map((time, index) => (
                   <TouchableOpacity
@@ -374,7 +392,7 @@ export default function AddMedicationScreen() {
 
           {/* Color */}
           <View style={styles.field}>
-            <Text style={styles.label}>标签颜色</Text>
+            <Text style={[styles.label, { fontSize: s(16) }]}>标签颜色</Text>
             <View style={styles.colorRow}>
               {Colors.pillColors.map(c => (
                 <TouchableOpacity
@@ -392,12 +410,12 @@ export default function AddMedicationScreen() {
 
           {/* Expiry Date */}
           <View style={styles.field}>
-            <Text style={styles.label}>有效期</Text>
+            <Text style={[styles.label, { fontSize: s(16) }]}>有效期</Text>
             <TouchableOpacity
-              style={styles.input}
+              style={[styles.input, { padding: s(16), borderRadius: s(16) }]}
               onPress={() => setShowDatePicker(true)}
             >
-              <Text style={expiryDate ? styles.inputText : styles.inputPlaceholder}>
+              <Text style={[expiryDate ? styles.inputText : styles.inputPlaceholder, { fontSize: s(16) }]}>
                 {expiryDate ? format(expiryDate, 'yyyy-MM-dd') : '选填'}
               </Text>
             </TouchableOpacity>
@@ -415,12 +433,38 @@ export default function AddMedicationScreen() {
             )}
           </View>
 
+          {/* Usage Note — quick tags + custom */}
+          <View style={styles.field}>
+            <Text style={[styles.label, { fontSize: s(16) }]}>服用方式</Text>
+            <View style={styles.chipRow}>
+              {['饭后服用', '饭前服用', '空腹服用', '睡前服用', '随餐服用'].map(tag => (
+                <TouchableOpacity
+                  key={tag}
+                  style={[styles.chip, usageNote === tag && styles.chipSelected]}
+                  onPress={() => setUsageNote(usageNote === tag ? '' : tag)}
+                >
+                  <Text style={[styles.chipText, usageNote === tag && styles.chipTextSelected]}>
+                    {tag}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+            {/* Custom usage note if not matching a tag */}
+            <TextInput
+              style={[styles.input, { marginTop: 10, fontSize: s(16), padding: s(16), borderRadius: s(16) }]}
+              placeholder="或自定义服用方式"
+              placeholderTextColor={Colors.textMuted}
+              value={['饭后服用', '饭前服用', '空腹服用', '睡前服用', '随餐服用'].includes(usageNote) ? '' : usageNote}
+              onChangeText={(t) => setUsageNote(t)}
+            />
+          </View>
+
           {/* Notes */}
           <View style={styles.field}>
-            <Text style={styles.label}>备注</Text>
+            <Text style={[styles.label, { fontSize: s(16) }]}>备注</Text>
             <TextInput
-              style={[styles.input, { height: 80, textAlignVertical: 'top' }]}
-              placeholder="如：饭后服用、需要空腹"
+              style={[styles.input, { height: s(80), textAlignVertical: 'top', fontSize: s(16), padding: s(16), borderRadius: s(16) }]}
+              placeholder="其他备注信息"
               placeholderTextColor={Colors.textMuted}
               value={notes}
               onChangeText={setNotes}
@@ -568,7 +612,7 @@ const styles = StyleSheet.create({
     borderColor: Colors.primary,
   },
   chipText: {
-    fontSize: 14,
+    fontSize: 15,
     color: Colors.primary,
     fontWeight: '500',
   },

@@ -1,10 +1,12 @@
-import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Alert } from 'react-native'
+import { useState, useEffect, useCallback } from 'react'
+import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Alert, Linking } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
-import { useRouter } from 'expo-router'
+import { useRouter, useFocusEffect } from 'expo-router'
 import { MaterialIcons } from '@expo/vector-icons'
 import { Colors } from '../../constants/colors'
 import { useAuth } from '../../hooks/useAuth'
 import { useMode, type AppMode } from '../../contexts/ModeContext'
+import { getStreakDays, getProfileStats } from '../../lib/logs'
 
 type SettingsItem = {
   icon: keyof typeof MaterialIcons.glyphMap
@@ -30,6 +32,26 @@ export default function ProfileScreen() {
   const { user, signOut } = useAuth()
   const { isElder, s, si, setMode, mode } = useMode()
   const router = useRouter()
+  const [streak, setStreak] = useState(0)
+  const [totalTaken, setTotalTaken] = useState(0)
+  const [activeDays, setActiveDays] = useState(0)
+
+  const loadStats = useCallback(async () => {
+    if (!user) return
+    try {
+      const [streakDays, stats] = await Promise.all([
+        getStreakDays(user.id),
+        getProfileStats(user.id),
+      ])
+      setStreak(streakDays)
+      setTotalTaken(stats.totalTaken)
+      setActiveDays(stats.activeDays)
+    } catch (e) {
+      console.error('Failed to load profile stats:', e)
+    }
+  }, [user])
+
+  useFocusEffect(useCallback(() => { loadStats() }, [loadStats]))
 
   const username = user?.email ? user.email.split('@')[0] : '用户'
 
@@ -48,6 +70,34 @@ export default function ProfileScreen() {
     ])
   }
 
+  const handleNotifications = () => {
+    Alert.alert('通知设置', '请在系统设置中管理本应用的通知权限', [
+      { text: '取消', style: 'cancel' },
+      { text: '打开设置', onPress: () => Linking.openSettings() },
+    ])
+  }
+
+  const handleExportData = () => {
+    Alert.alert('导出数据', '该功能即将上线，敬请期待！')
+  }
+
+  const handleBackup = () => {
+    Alert.alert('备份与同步', '您的数据已通过云端自动同步，无需手动备份。')
+  }
+
+  const handleFAQ = () => {
+    Alert.alert(
+      '常见问题',
+      '1. 如何添加药品？\n点击药盒页右上角「添加」按钮\n\n2. 如何设置提醒？\n在药品详情中设置提醒时间\n\n3. 如何使用语音？\n点击首页或药盒页的麦克风按钮\n\n4. 如何切换大字版？\n在「我的」→「界面模式」中切换',
+    )
+  }
+
+  const handleContact = () => {
+    Alert.alert('联系我们', '如有问题或建议，请发送邮件至：\nsupport@catmed.app', [
+      { text: '好的' },
+    ])
+  }
+
   const modeLabel = mode === 'elder' ? '长辈版' : '普通版'
 
   return (
@@ -61,10 +111,12 @@ export default function ProfileScreen() {
             <View style={[styles.avatar, { width: s(100), height: s(100), borderRadius: s(50) }]}>
               <MaterialIcons name="person" size={si(48)} color={Colors.textMuted} />
             </View>
+            {streak > 0 && (
             <View style={styles.streakBadge}>
               <MaterialIcons name="local-fire-department" size={si(14)} color="#FF6B35" />
-              <Text style={[styles.streakBadgeText, { fontSize: s(11) }]}>7 Days</Text>
+              <Text style={[styles.streakBadgeText, { fontSize: s(11) }]}>{streak} 天</Text>
             </View>
+          )}
           </View>
           <Text style={[styles.username, { fontSize: s(20) }]}>{username}</Text>
         </View>
@@ -73,12 +125,12 @@ export default function ProfileScreen() {
         <View style={styles.statsRow}>
           <View style={[styles.statCard, { padding: s(16), borderRadius: s(16) }]}>
             <MaterialIcons name="medication" size={si(28)} color={Colors.primary} />
-            <Text style={[styles.statNumber, { fontSize: s(28) }]}>128</Text>
+            <Text style={[styles.statNumber, { fontSize: s(28) }]}>{totalTaken}</Text>
             <Text style={[styles.statLabel, { fontSize: s(13) }]}>服药总次数</Text>
           </View>
           <View style={[styles.statCard, { padding: s(16), borderRadius: s(16) }]}>
             <MaterialIcons name="calendar-today" size={si(28)} color={Colors.primary} />
-            <Text style={[styles.statNumber, { fontSize: s(28) }]}>45</Text>
+            <Text style={[styles.statNumber, { fontSize: s(28) }]}>{activeDays}</Text>
             <Text style={[styles.statLabel, { fontSize: s(13) }]}>使用天数</Text>
           </View>
         </View>
@@ -92,25 +144,23 @@ export default function ProfileScreen() {
         {/* 账户设置 */}
         <Text style={[styles.sectionHeader, { fontSize: s(12) }]}>账户设置</Text>
         <View style={[styles.settingsGroup, { borderRadius: s(16) }]}>
-          <SettingsRow icon="notifications-active" label="通知设置" s={s} si={si} />
-          <View style={styles.separator} />
-          <SettingsRow icon="music-note" label="提醒铃声" s={s} si={si} />
+          <SettingsRow icon="notifications-active" label="通知设置" onPress={handleNotifications} s={s} si={si} />
         </View>
 
         {/* 数据与隐私 */}
         <Text style={[styles.sectionHeader, { fontSize: s(12) }]}>数据与隐私</Text>
         <View style={[styles.settingsGroup, { borderRadius: s(16) }]}>
-          <SettingsRow icon="cloud-sync" label="备份与同步" s={s} si={si} />
+          <SettingsRow icon="cloud-sync" label="备份与同步" onPress={handleBackup} s={s} si={si} />
           <View style={styles.separator} />
-          <SettingsRow icon="download" label="导出健康数据" s={s} si={si} />
+          <SettingsRow icon="download" label="导出健康数据" onPress={handleExportData} s={s} si={si} />
         </View>
 
         {/* 支持 */}
         <Text style={[styles.sectionHeader, { fontSize: s(12) }]}>支持</Text>
         <View style={[styles.settingsGroup, { borderRadius: s(16) }]}>
-          <SettingsRow icon="quiz" label="常见问题" s={s} si={si} />
+          <SettingsRow icon="quiz" label="常见问题" onPress={handleFAQ} s={s} si={si} />
           <View style={styles.separator} />
-          <SettingsRow icon="mail" label="联系我们" s={s} si={si} />
+          <SettingsRow icon="mail" label="联系我们" onPress={handleContact} s={s} si={si} />
         </View>
 
         <TouchableOpacity style={[styles.signOutButton, { paddingVertical: s(14), borderRadius: s(14) }]} onPress={handleSignOut} activeOpacity={0.6}>

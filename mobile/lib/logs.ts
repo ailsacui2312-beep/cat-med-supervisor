@@ -215,3 +215,33 @@ export async function getStreakDays(userId: string): Promise<number> {
 
   return streak
 }
+
+/**
+ * Get profile statistics: total taken count and total active days.
+ */
+export async function getProfileStats(userId: string): Promise<{ totalTaken: number; activeDays: number }> {
+  // Total taken
+  const { count: totalTaken, error: e1 } = await supabase
+    .from('medication_logs')
+    .select('*', { count: 'exact', head: true })
+    .eq('user_id', userId)
+    .eq('status', 'taken')
+
+  if (e1) throw e1
+
+  // Distinct active days
+  const { data, error: e2 } = await supabase
+    .from('medication_logs')
+    .select('scheduled_date')
+    .eq('user_id', userId)
+    .eq('status', 'taken')
+
+  if (e2) throw e2
+
+  const uniqueDays = new Set((data || []).map(r => r.scheduled_date))
+
+  return {
+    totalTaken: totalTaken || 0,
+    activeDays: uniqueDays.size,
+  }
+}

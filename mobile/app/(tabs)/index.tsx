@@ -104,7 +104,14 @@ export default function TodayScreen() {
     setVoiceVisible(false)
     switch (intent.type) {
       case 'ADD_MED':
-        router.push({ pathname: '/medication/add', params: { name: intent.name } })
+        router.push({
+          pathname: '/medication/add',
+          params: {
+            name: intent.name,
+            ...(intent.illness ? { illness: intent.illness } : {}),
+            ...(intent.usage_note ? { usage_note: intent.usage_note } : {}),
+          },
+        })
         break
       case 'ADD_HEALTH':
         router.push({
@@ -155,14 +162,23 @@ export default function TodayScreen() {
       ]}>
         <View style={[styles.colorDot, { backgroundColor: item.medication.color }]} />
         <View style={styles.medInfo}>
-          <Text style={[styles.medName, { fontSize: s(16) }, isDone && styles.medNameDone]}>
-            {item.medication.name}
-          </Text>
+          <TouchableOpacity onPress={() => router.push(`/medication/${item.medication.id}`)} activeOpacity={0.7}>
+            <Text style={[styles.medName, { fontSize: s(16) }, isDone && styles.medNameDone]}>
+              {item.medication.name}
+            </Text>
+          </TouchableOpacity>
+          {item.medication.illness && (
+            <View style={styles.illnessBadge}>
+              <MaterialIcons name="medical-services" size={si(10)} color={Colors.primary} />
+              <Text style={[styles.illnessText, { fontSize: s(10) }]}>{item.medication.illness}</Text>
+            </View>
+          )}
           <View style={styles.medDosageRow}>
             <Text style={[styles.medDosage, { fontSize: s(13) }]}>
               {item.medication.dosage || ''} {item.medication.unit}
               {'  '}
               {item.log.scheduled_time.slice(0, 5)}
+              {item.medication.usage_note ? `  ·  ${item.medication.usage_note}` : ''}
             </Text>
             {isMissed && (
               <View style={styles.missedBadge}>
@@ -528,6 +544,21 @@ const styles = StyleSheet.create({
   medNameDone: {
     textDecorationLine: 'line-through',
     color: Colors.textMuted,
+  },
+  illnessBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+    marginTop: 2,
+    alignSelf: 'flex-start',
+    backgroundColor: Colors.primary + '10',
+    borderRadius: 6,
+    paddingHorizontal: 6,
+    paddingVertical: 1,
+  },
+  illnessText: {
+    color: Colors.primary,
+    fontWeight: '600',
   },
   medDosageRow: {
     flexDirection: 'row',
