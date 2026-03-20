@@ -14,7 +14,7 @@ import {
   createMedication, pickImage, takePhoto, uploadMedicationPhoto,
   FREQUENCY_LABELS, UNIT_OPTIONS,
 } from '../../lib/medications'
-import { createSchedule } from '../../lib/schedules'
+import { createSchedule, updateSchedule } from '../../lib/schedules'
 import { setupNotifications, scheduleMedicationReminder } from '../../lib/notifications'
 import type { Frequency, CycleType } from '../../lib/types'
 import { useMode } from '../../contexts/ModeContext'
@@ -139,7 +139,10 @@ export default function AddMedicationScreen() {
       await setupNotifications()
       for (const time of times) {
         const schedule = await createSchedule(med.id, user.id, time)
-        await scheduleMedicationReminder(schedule, med)
+        const notificationId = await scheduleMedicationReminder(schedule, med)
+        if (notificationId) {
+          await updateSchedule(schedule.id, { notification_id: notificationId })
+        }
       }
 
       Alert.alert('添加成功', `${name} 已添加到药柜`, [
