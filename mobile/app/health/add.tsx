@@ -60,7 +60,7 @@ export default function AddHealthScreen() {
         source: (params.source as 'manual' | 'screenshot') || 'manual',
       })
       Alert.alert('记录成功', `${info.label}数据已保存`, [
-        { text: '好的', onPress: () => router.back() },
+        { text: '好的', onPress: () => router.replace('/(tabs)/medications') },
       ])
     } catch (e: any) {
       Alert.alert('错误', e.message)

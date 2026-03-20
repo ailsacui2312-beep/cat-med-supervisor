@@ -217,6 +217,35 @@ export async function getStreakDays(userId: string): Promise<number> {
 }
 
 /**
+ * Check if the user has missed meds for 3+ consecutive days (not counting today).
+ * Returns true if the user has been "bad" for 3 days in a row.
+ */
+export async function hasBadStreak(userId: string, days = 3): Promise<boolean> {
+  const today = new Date()
+  // Check the last `days` days (excluding today since it's still in progress)
+  for (let i = 1; i <= days; i++) {
+    const date = format(
+      new Date(today.getTime() - i * 24 * 60 * 60 * 1000),
+      'yyyy-MM-dd'
+    )
+    const { data, error } = await supabase
+      .from('medication_logs')
+      .select('status')
+      .eq('user_id', userId)
+      .eq('scheduled_date', date)
+
+    if (error) throw error
+    if (!data || data.length === 0) continue // No meds scheduled that day, skip
+
+    const takenCount = data.filter(l => l.status === 'taken').length
+    const takenRate = takenCount / data.length
+    // "好好吃药" = took at least half of the scheduled meds
+    if (takenRate >= 0.5) return false
+  }
+  return true
+}
+
+/**
  * Get profile statistics: total taken count and total active days.
  */
 export async function getProfileStats(userId: string): Promise<{ totalTaken: number; activeDays: number }> {

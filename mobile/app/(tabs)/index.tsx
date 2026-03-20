@@ -1,7 +1,7 @@
-import { useState, useEffect, useCallback, useRef } from 'react'
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react'
 import {
   View, Text, FlatList, TouchableOpacity, StyleSheet,
-  RefreshControl, Alert, Image, Animated,
+  RefreshControl, Alert, ScrollView, Image,
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useRouter } from 'expo-router'
@@ -9,15 +9,27 @@ import * as Haptics from 'expo-haptics'
 import { format } from 'date-fns'
 import { zhCN } from 'date-fns/locale'
 import { MaterialIcons } from '@expo/vector-icons'
+import { Video, ResizeMode } from 'expo-av'
+import AsyncStorage from '@react-native-async-storage/async-storage'
 import { Colors } from '../../constants/colors'
 import { useAuth } from '../../hooks/useAuth'
 import { useMode } from '../../contexts/ModeContext'
-import { fetchTodayItems, markAsTaken, markAsSkipped, undoLog, getStreakDays } from '../../lib/logs'
-import type { TodayItem } from '../../lib/types'
+import { fetchTodayItems, markAsTaken, markAsSkipped, undoLog, getStreakDays, hasBadStreak } from '../../lib/logs'
+import { getMyFamily } from '../../lib/family'
+import type { TodayItem, FamilyMemberWithEmail } from '../../lib/types'
 import type { VoiceIntent } from '../../lib/voice'
 import VoiceModal from '../../components/VoiceModal'
 
-const catMascot = require('../../assets/cat-mascot.png')
+// Cat animation videos — random happy ones + a special "worried" one
+const CAT_VIDEOS_NORMAL = [
+  require('../../assets/cat-videos/坐着.mp4'),
+  require('../../assets/cat-videos/开心.mp4'),
+  require('../../assets/cat-videos/打招呼.mp4'),
+  require('../../assets/cat-videos/跑过来.mp4'),
+  require('../../assets/cat-videos/转圈圈.mp4'),
+  require('../../assets/cat-videos/一起玩.mp4'),
+]
+const CAT_VIDEO_WORRIED = require('../../assets/cat-videos/担心.mp4')
 
 const TIME_GROUPS = [
   { label: '早上', start: '00:00', end: '11:59' },
@@ -34,28 +46,43 @@ export default function TodayScreen() {
   const [refreshing, setRefreshing] = useState(false)
   const [loading, setLoading] = useState(true)
   const [voiceVisible, setVoiceVisible] = useState(false)
-
-  // Cat mascot sway animation
-  const swayAnim = useRef(new Animated.Value(0)).current
-  useEffect(() => {
-    Animated.loop(
-      Animated.sequence([
-        Animated.timing(swayAnim, { toValue: 1, duration: 2000, useNativeDriver: true }),
-        Animated.timing(swayAnim, { toValue: -1, duration: 2000, useNativeDriver: true }),
-        Animated.timing(swayAnim, { toValue: 0, duration: 1000, useNativeDriver: true }),
-      ])
-    ).start()
-  }, [])
+  const [worried, setWorried] = useState(false)
+  const [familyMembers, setFamilyMembers] = useState<FamilyMemberWithEmail[]>([])
+  const [memberNicknames, setMemberNicknames] = useState<Record<string, string>>({})
+  // Cat video state: which video to show + key to force remount
+  const videoRef = useRef<Video>(null)
+  const [videoKey, setVideoKey] = useState(0)
+  const [catVideoSource, setCatVideoSource] = useState(
+    () => CAT_VIDEOS_NORMAL[Math.floor(Math.random() * CAT_VIDEOS_NORMAL.length)]
+  )
 
   const loadData = useCallback(async () => {
     if (!user) return
     try {
-      const [todayItems, streakDays] = await Promise.all([
+      const [todayItems, streakDays, isBadStreak, familyData] = await Promise.all([
         fetchTodayItems(user.id),
         getStreakDays(user.id),
+        hasBadStreak(user.id, 3),
+        getMyFamily(user.id).catch(() => null),
       ])
       setItems(todayItems)
       setStreak(streakDays)
+      setWorried(isBadStreak)
+      if (familyData) {
+        // Only show other members (not self)
+        const others = familyData.members.filter(m => m.user_id !== user.id)
+        setFamilyMembers(others)
+        // Load nicknames
+        const nicks: Record<string, string> = {}
+        for (const m of others) {
+          const saved = await AsyncStorage.getItem(`nickname_${m.user_id}`)
+          if (saved) nicks[m.user_id] = saved
+          else if (m.nickname) nicks[m.user_id] = m.nickname
+        }
+        setMemberNicknames(nicks)
+      } else {
+        setFamilyMembers([])
+      }
     } catch (e: any) {
       console.error('Failed to load today:', e)
     } finally {
@@ -71,10 +98,20 @@ export default function TodayScreen() {
     setRefreshing(false)
   }
 
+  // Happy cat videos to play after taking meds
+  const CAT_HAPPY_VIDEOS = [
+    require('../../assets/cat-videos/开心.mp4'),
+    require('../../assets/cat-videos/转圈圈.mp4'),
+  ]
+
   const handleTake = async (item: TodayItem) => {
     try {
       await markAsTaken(item.log.id)
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success)
+      // Play a happy cat video!
+      const happyVideo = CAT_HAPPY_VIDEOS[Math.floor(Math.random() * CAT_HAPPY_VIDEOS.length)]
+      setCatVideoSource(happyVideo)
+      setVideoKey(k => k + 1)
       await loadData()
     } catch (e: any) {
       Alert.alert('错误', e.message)
@@ -145,6 +182,9 @@ export default function TodayScreen() {
   const totalCount = items.length
   const progress = totalCount > 0 ? takenCount / totalCount : 0
 
+  // Show worried cat only when user hasn't taken meds well for 3+ consecutive days
+  const catVideo = worried ? CAT_VIDEO_WORRIED : catVideoSource
+
   const today = new Date()
   const dateStr = format(today, 'M月d日 EEEE', { locale: zhCN })
 
@@ -160,7 +200,14 @@ export default function TodayScreen() {
         isDone && styles.medCardDone,
         isMissed && styles.medCardMissed,
       ]}>
-        <View style={[styles.colorDot, { backgroundColor: item.medication.color }]} />
+        {item.medication.photo_url ? (
+          <Image
+            source={{ uri: item.medication.photo_url }}
+            style={{ width: s(44), height: s(44), borderRadius: s(8), marginRight: s(12) }}
+          />
+        ) : (
+          <View style={[styles.colorDot, { backgroundColor: item.medication.color }]} />
+        )}
         <View style={styles.medInfo}>
           <TouchableOpacity onPress={() => router.push(`/medication/${item.medication.id}`)} activeOpacity={0.7}>
             <Text style={[styles.medName, { fontSize: s(16) }, isDone && styles.medNameDone]}>
@@ -231,6 +278,32 @@ export default function TodayScreen() {
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
+      {/* ===== Family Member Bar ===== */}
+      {familyMembers.length > 0 && (
+        <View style={[styles.familyBar, { paddingVertical: s(10), paddingHorizontal: s(16) }]}>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: s(12), alignItems: 'center' }}>
+            <View style={[styles.familyBarSelf, { width: s(40), height: s(40), borderRadius: s(20) }]}>
+              <MaterialIcons name="person" size={si(20)} color="#fff" />
+            </View>
+            {familyMembers.map(member => (
+              <TouchableOpacity
+                key={member.id}
+                style={[styles.familyBarMember, { alignItems: 'center', width: s(56) }]}
+                onPress={() => router.push(`/family/member/${member.user_id}`)}
+                activeOpacity={0.7}
+              >
+                <View style={[styles.familyBarAvatar, { width: s(40), height: s(40), borderRadius: s(20) }]}>
+                  <MaterialIcons name="person-outline" size={si(20)} color={Colors.primary} />
+                </View>
+                <Text style={[styles.familyBarName, { fontSize: s(10) }]} numberOfLines={1}>
+                  {memberNicknames[member.user_id] || member.nickname || '家人'}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+        </View>
+      )}
+
       {/* ===== Hero Section ===== */}
       <View style={[styles.heroSection, { paddingHorizontal: s(20), paddingTop: s(8), paddingBottom: s(16) }]}>
         {/* Top row: date + calendar badge */}
@@ -249,23 +322,39 @@ export default function TodayScreen() {
 
         {/* Cat mascot + status area */}
         <View style={styles.heroCenterRow}>
-          {/* Cat */}
-          <Animated.Image
-            source={catMascot}
-            style={{
-              width: s(100),
-              height: s(100),
-              transform: [
-                {
-                  rotate: swayAnim.interpolate({
-                    inputRange: [-1, 0, 1],
-                    outputRange: ['-3deg', '0deg', '3deg'],
-                  }),
-                },
-              ],
+          {/* Cat animation video — tap to switch */}
+          <TouchableOpacity
+            activeOpacity={0.8}
+            onPress={() => {
+              if (worried) return // Don't switch when worried
+              // Pick a different random video
+              let next = catVideoSource
+              while (next === catVideoSource && CAT_VIDEOS_NORMAL.length > 1) {
+                next = CAT_VIDEOS_NORMAL[Math.floor(Math.random() * CAT_VIDEOS_NORMAL.length)]
+              }
+              setCatVideoSource(next)
+              setVideoKey(k => k + 1) // Force Video component remount
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
             }}
-            resizeMode="contain"
-          />
+            style={{
+              width: s(120),
+              height: s(120),
+              borderRadius: s(16),
+              overflow: 'hidden',
+              backgroundColor: Colors.bgPrimary,
+            }}
+          >
+            <Video
+              key={`cat-video-${videoKey}`}
+              ref={videoRef}
+              source={catVideo}
+              style={{ width: s(120), height: s(120) }}
+              resizeMode={ResizeMode.COVER}
+              shouldPlay
+              isLooping={false}
+              isMuted={false}
+            />
+          </TouchableOpacity>
 
           {/* Right side: status info */}
           <View style={styles.heroStatusArea}>
@@ -660,5 +749,33 @@ const styles = StyleSheet.create({
   allDoneText: {
     color: Colors.success,
     fontWeight: '600',
+  },
+
+  // Family bar
+  familyBar: {
+    backgroundColor: Colors.bgCard,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.borderLight,
+  },
+  familyBarSelf: {
+    backgroundColor: Colors.primary,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: Colors.primary,
+  },
+  familyBarMember: {},
+  familyBarAvatar: {
+    backgroundColor: Colors.primaryLight,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: Colors.borderLight,
+  },
+  familyBarName: {
+    color: Colors.textSecondary,
+    fontWeight: '500',
+    marginTop: 2,
+    textAlign: 'center',
   },
 })
