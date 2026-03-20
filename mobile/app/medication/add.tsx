@@ -14,8 +14,7 @@ import {
   createMedication, pickImage, takePhoto, uploadMedicationPhoto,
   FREQUENCY_LABELS, UNIT_OPTIONS,
 } from '../../lib/medications'
-import { createSchedule } from '../../lib/schedules'
-import { setupNotifications, scheduleMedicationReminder } from '../../lib/notifications'
+import { createSchedulesWithReminders } from '../../lib/reminderService'
 import type { Frequency, CycleType } from '../../lib/types'
 import { useMode } from '../../contexts/ModeContext'
 
@@ -136,14 +135,10 @@ export default function AddMedicationScreen() {
       })
 
       // Create schedules and register notifications
-      await setupNotifications()
-      for (const time of times) {
-        const schedule = await createSchedule(med.id, user.id, time)
-        await scheduleMedicationReminder(schedule, med)
-      }
+      await createSchedulesWithReminders(med.id, user.id, times, med)
 
       Alert.alert('添加成功', `${name} 已添加到药柜`, [
-        { text: '好的', onPress: () => router.back() },
+        { text: '好的', onPress: () => router.replace('/(tabs)/medications') },
       ])
     } catch (e: any) {
       Alert.alert('错误', e.message)

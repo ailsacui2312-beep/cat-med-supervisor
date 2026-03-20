@@ -12,12 +12,8 @@ import {
   fetchMedication, updateMedication, pickImage, takePhoto,
   FREQUENCY_LABELS, UNIT_OPTIONS,
 } from '../../lib/medications'
-import {
-  fetchSchedulesForMedication, createSchedule, updateSchedule, deleteSchedule,
-} from '../../lib/schedules'
-import {
-  setupNotifications, scheduleMedicationReminder, cancelMedicationReminder,
-} from '../../lib/notifications'
+import { fetchSchedulesForMedication } from '../../lib/schedules'
+import { replaceSchedules } from '../../lib/reminderService'
 import type { Frequency, Schedule } from '../../lib/types'
 
 const FREQUENCIES: Frequency[] = ['daily', 'twice_daily', 'three_daily', 'weekly', 'as_needed']
@@ -139,17 +135,9 @@ export default function EditMedicationScreen() {
       })
 
       // Sync schedules: cancel old notifications, delete old, create new
-      for (const old of existingSchedules) {
-        await cancelMedicationReminder(old.notification_id)
-        await deleteSchedule(old.id)
-      }
-      await setupNotifications()
       const updatedMed = await fetchMedication(id)
-      for (const time of times) {
-        const schedule = await createSchedule(id, user.id, time)
-        if (updatedMed) {
-          await scheduleMedicationReminder(schedule, updatedMed)
-        }
+      if (updatedMed) {
+        await replaceSchedules(id, user.id, existingSchedules, times, updatedMed)
       }
 
       Alert.alert('保存成功', `${name} 已更新`, [

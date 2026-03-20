@@ -33,7 +33,7 @@ export async function deleteSchedule(id: string): Promise<void> {
 
 export async function updateSchedule(
   id: string,
-  updates: { time_of_day?: string; days_of_week?: number[]; enabled?: boolean }
+  updates: { time_of_day?: string; days_of_week?: number[]; enabled?: boolean; notification_id?: string | null }
 ): Promise<Schedule> {
   const { data, error } = await supabase
     .from('schedules')

@@ -8,9 +8,9 @@ import { useLocalSearchParams, useRouter, useFocusEffect } from 'expo-router'
 import { format, differenceInDays, parseISO } from 'date-fns'
 import { Colors } from '../../constants/colors'
 import {
-  fetchMedication, archiveMedication, FREQUENCY_LABELS,
+  fetchMedication, FREQUENCY_LABELS,
 } from '../../lib/medications'
-import { updateSchedule } from '../../lib/schedules'
+import { enableSchedule, disableSchedule, archiveWithCleanup } from '../../lib/reminderService'
 import { useMode } from '../../contexts/ModeContext'
 import type { MedicationWithSchedules } from '../../lib/types'
 
@@ -29,8 +29,15 @@ export default function MedicationDetailScreen() {
   useFocusEffect(useCallback(() => { loadData() }, [loadData]))
 
   const handleToggleSchedule = async (scheduleId: string, enabled: boolean) => {
+    if (!med) return
     try {
-      await updateSchedule(scheduleId, { enabled })
+      const schedule = med.schedules.find(item => item.id === scheduleId)
+      if (!schedule) return
+      if (enabled) {
+        await enableSchedule(schedule, med)
+      } else {
+        await disableSchedule(schedule)
+      }
       loadData()
     } catch (e: any) {
       Alert.alert('错误', e.message)
@@ -48,7 +55,7 @@ export default function MedicationDetailScreen() {
           text: '停用',
           style: 'destructive',
           onPress: async () => {
-            await archiveMedication(med.id)
+            await archiveWithCleanup(med)
             router.back()
           },
         },
