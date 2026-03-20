@@ -11,6 +11,11 @@ import {
   fetchMedication, archiveMedication, FREQUENCY_LABELS,
 } from '../../lib/medications'
 import { updateSchedule } from '../../lib/schedules'
+import {
+  cancelMedicationReminder,
+  scheduleMedicationReminder,
+  setupNotifications,
+} from '../../lib/notifications'
 import { useMode } from '../../contexts/ModeContext'
 import type { MedicationWithSchedules } from '../../lib/types'
 
@@ -29,8 +34,22 @@ export default function MedicationDetailScreen() {
   useFocusEffect(useCallback(() => { loadData() }, [loadData]))
 
   const handleToggleSchedule = async (scheduleId: string, enabled: boolean) => {
+    if (!med) return
     try {
-      await updateSchedule(scheduleId, { enabled })
+      const schedule = med.schedules.find(item => item.id === scheduleId)
+      if (!schedule) return
+
+      if (!enabled) {
+        await cancelMedicationReminder(schedule.notification_id)
+        await updateSchedule(scheduleId, { enabled: false, notification_id: null })
+      } else {
+        await setupNotifications()
+        const notificationId = await scheduleMedicationReminder(schedule, med)
+        await updateSchedule(scheduleId, {
+          enabled: true,
+          notification_id: notificationId,
+        })
+      }
       loadData()
     } catch (e: any) {
       Alert.alert('错误', e.message)
@@ -48,6 +67,13 @@ export default function MedicationDetailScreen() {
           text: '停用',
           style: 'destructive',
           onPress: async () => {
+            for (const schedule of med.schedules) {
+              await cancelMedicationReminder(schedule.notification_id)
+              await updateSchedule(schedule.id, {
+                enabled: false,
+                notification_id: null,
+              })
+            }
             await archiveMedication(med.id)
             router.back()
           },

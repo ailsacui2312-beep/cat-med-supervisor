@@ -148,7 +148,10 @@ export default function EditMedicationScreen() {
       for (const time of times) {
         const schedule = await createSchedule(id, user.id, time)
         if (updatedMed) {
-          await scheduleMedicationReminder(schedule, updatedMed)
+          const notificationId = await scheduleMedicationReminder(schedule, updatedMed)
+          if (notificationId) {
+            await updateSchedule(schedule.id, { notification_id: notificationId })
+          }
         }
       }
 
