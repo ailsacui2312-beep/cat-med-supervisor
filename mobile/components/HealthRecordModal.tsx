@@ -3,7 +3,6 @@ import {
   View, Text, TextInput, TouchableOpacity, StyleSheet,
   Modal, Alert, Dimensions, KeyboardAvoidingView, Platform,
 } from 'react-native'
-import DateTimePicker from '@react-native-community/datetimepicker'
 import { MaterialIcons } from '@expo/vector-icons'
 import { format } from 'date-fns'
 import { zhCN } from 'date-fns/locale'
@@ -43,9 +42,6 @@ export default function HealthRecordModal({
   const [value1, setValue1] = useState(initialValue || '')
   const [value2, setValue2] = useState('')
   const [saving, setSaving] = useState(false)
-  const [recordTime, setRecordTime] = useState(new Date())
-  const [showDatePicker, setShowDatePicker] = useState(false)
-  const [showTimePicker, setShowTimePicker] = useState(false)
 
   // Reset when modal opens
   useEffect(() => {
@@ -53,13 +49,11 @@ export default function HealthRecordModal({
       setType(initialType || 'blood_sugar')
       setValue1(initialValue || '')
       setValue2('')
-      setRecordTime(new Date())
-      setShowDatePicker(false)
-      setShowTimePicker(false)
     }
   }, [visible, initialType, initialValue])
 
   const info = HEALTH_TYPE_INFO[type]
+  const now = new Date()
 
   const getRangeStatus = () => {
     const v1 = parseFloat(value1)
@@ -93,7 +87,6 @@ export default function HealthRecordModal({
         value1: v1,
         value2: type === 'blood_pressure' ? parseFloat(value2) : undefined,
         unit: info.defaultUnit,
-        measured_at: recordTime.toISOString(),
         source: 'manual',
       })
       onSaved?.()
@@ -175,70 +168,16 @@ export default function HealthRecordModal({
             })}
           </View>
 
-          {/* Date + Time row */}
-          <View style={[styles.timeRow, { borderRadius: s(12), paddingHorizontal: s(14), paddingVertical: s(10), marginBottom: s(14), flexDirection: 'column', gap: s(6) }]}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
-              <View style={styles.timeLeft}>
-                <MaterialIcons name="event" size={si(18)} color={Colors.textMuted} />
-                <Text style={[styles.timeLabel, { fontSize: s(14) }]}>日期</Text>
-              </View>
-              <TouchableOpacity
-                onPress={() => { setShowDatePicker(true); setShowTimePicker(false) }}
-                style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}
-                activeOpacity={0.7}
-              >
-                <Text style={[styles.timeValue, { fontSize: s(14), color: Colors.primary }]}>
-                  {format(recordTime, 'M月d日', { locale: zhCN })}
-                </Text>
-                <MaterialIcons name="edit" size={si(14)} color={Colors.primary} />
-              </TouchableOpacity>
+          {/* Time row */}
+          <View style={[styles.timeRow, { borderRadius: s(12), paddingHorizontal: s(14), paddingVertical: s(12), marginBottom: s(14) }]}>
+            <View style={styles.timeLeft}>
+              <MaterialIcons name="schedule" size={si(18)} color={Colors.textMuted} />
+              <Text style={[styles.timeLabel, { fontSize: s(14) }]}>记录时间</Text>
             </View>
-            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
-              <View style={styles.timeLeft}>
-                <MaterialIcons name="schedule" size={si(18)} color={Colors.textMuted} />
-                <Text style={[styles.timeLabel, { fontSize: s(14) }]}>时间</Text>
-              </View>
-              <TouchableOpacity
-                onPress={() => { setShowTimePicker(true); setShowDatePicker(false) }}
-                style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}
-                activeOpacity={0.7}
-              >
-                <Text style={[styles.timeValue, { fontSize: s(14), color: Colors.primary }]}>
-                  {format(recordTime, 'HH:mm')}
-                </Text>
-                <MaterialIcons name="edit" size={si(14)} color={Colors.primary} />
-              </TouchableOpacity>
-            </View>
+            <Text style={[styles.timeValue, { fontSize: s(14) }]}>
+              今天 {format(now, 'HH:mm')}
+            </Text>
           </View>
-          {showDatePicker && (
-            <DateTimePicker
-              value={recordTime}
-              mode="date"
-              display="spinner"
-              maximumDate={new Date()}
-              onChange={(_, date) => {
-                setShowDatePicker(false)
-                if (date) {
-                  // Preserve the current time, just change the date
-                  const merged = new Date(date)
-                  merged.setHours(recordTime.getHours(), recordTime.getMinutes())
-                  setRecordTime(merged)
-                }
-              }}
-            />
-          )}
-          {showTimePicker && (
-            <DateTimePicker
-              value={recordTime}
-              mode="time"
-              is24Hour={true}
-              display="spinner"
-              onChange={(_, date) => {
-                setShowTimePicker(false)
-                if (date) setRecordTime(date)
-              }}
-            />
-          )}
 
           {/* Value input area */}
           <View style={[styles.valueArea, { borderRadius: s(16), padding: s(16), marginBottom: s(16) }]}>

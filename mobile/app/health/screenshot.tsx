@@ -1,12 +1,12 @@
 import { useState } from 'react'
 import {
   View, Text, TouchableOpacity, StyleSheet,
-  Alert, Image, ActivityIndicator, TextInput,
+  Alert, Image, ActivityIndicator,
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useRouter } from 'expo-router'
 import * as ImagePicker from 'expo-image-picker'
-import * as FileSystem from 'expo-file-system'
+import { readAsStringAsync } from 'expo-file-system'
 import { MaterialIcons } from '@expo/vector-icons'
 import { Colors } from '../../constants/colors'
 import { useAuth } from '../../hooks/useAuth'
@@ -31,8 +31,6 @@ export default function ScreenshotScreen() {
   const [analyzing, setAnalyzing] = useState(false)
   const [result, setResult] = useState<AnalysisResult | null>(null)
   const [saving, setSaving] = useState(false)
-  const [manualMode, setManualMode] = useState(false)
-  const [manualValue, setManualValue] = useState('')
 
   const pickImage = async () => {
     const permission = await ImagePicker.requestMediaLibraryPermissionsAsync()
@@ -70,8 +68,8 @@ export default function ScreenshotScreen() {
 
     setAnalyzing(true)
     try {
-      const base64 = await FileSystem.readAsStringAsync(imageUri, {
-        encoding: 'base64' as any,
+      const base64 = await readAsStringAsync(imageUri, {
+        encoding: 'base64',
       })
 
       const ext = imageUri.split('.').pop()?.toLowerCase()
@@ -92,14 +90,7 @@ export default function ScreenshotScreen() {
 
       setResult(data)
     } catch (e: any) {
-      Alert.alert(
-        '识别失败',
-        '云端识别功能暂未部署，你可以手动输入血糖值。',
-        [
-          { text: '手动输入', onPress: () => setManualMode(true) },
-          { text: '取消', style: 'cancel' },
-        ]
-      )
+      Alert.alert('错误', e.message || '截图分析失败，请重试')
     } finally {
       setAnalyzing(false)
     }
@@ -119,32 +110,7 @@ export default function ScreenshotScreen() {
         source: 'screenshot',
       })
       Alert.alert('保存成功', '血糖数据已记录', [
-        { text: '好的', onPress: () => router.replace('/(tabs)/medications') },
-      ])
-    } catch (e: any) {
-      Alert.alert('错误', e.message)
-    } finally {
-      setSaving(false)
-    }
-  }
-
-  const handleManualSave = async () => {
-    if (!user) return
-    const v = parseFloat(manualValue)
-    if (isNaN(v) || v <= 0) {
-      Alert.alert('提示', '请输入有效的血糖值')
-      return
-    }
-    setSaving(true)
-    try {
-      await createHealthRecord(user.id, {
-        type: 'blood_sugar',
-        value1: v,
-        unit: 'mmol/L',
-        source: 'screenshot',
-      })
-      Alert.alert('保存成功', '血糖数据已记录', [
-        { text: '好的', onPress: () => router.replace('/(tabs)/medications') },
+        { text: '好的', onPress: () => router.back() },
       ])
     } catch (e: any) {
       Alert.alert('错误', e.message)
@@ -279,35 +245,6 @@ export default function ScreenshotScreen() {
               </View>
             )}
           </>
-        )}
-
-        {/* Manual input fallback */}
-        {manualMode && (
-          <View style={styles.resultCard}>
-            <Text style={styles.resultTitle}>手动输入血糖值</Text>
-            <View style={styles.valueRow}>
-              <TextInput
-                style={[styles.valueInput, { flex: 1 }]}
-                placeholder="如 5.6"
-                placeholderTextColor={Colors.textMuted}
-                value={manualValue}
-                onChangeText={setManualValue}
-                keyboardType="decimal-pad"
-                autoFocus
-              />
-              <Text style={styles.unitLabel}>mmol/L</Text>
-            </View>
-            <TouchableOpacity
-              style={[styles.saveBtn, saving && { opacity: 0.5 }]}
-              onPress={handleManualSave}
-              disabled={saving}
-            >
-              <MaterialIcons name="save" size={18} color={Colors.textOnPrimary} />
-              <Text style={styles.saveBtnText}>
-                {saving ? '保存中...' : '确认保存'}
-              </Text>
-            </TouchableOpacity>
-          </View>
         )}
       </View>
     </SafeAreaView>
@@ -488,26 +425,5 @@ const styles = StyleSheet.create({
     color: Colors.textOnPrimary,
     fontSize: 16,
     fontWeight: '600',
-  },
-  valueRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    marginBottom: 16,
-  },
-  valueInput: {
-    backgroundColor: '#F8FAFC',
-    borderRadius: 16,
-    paddingHorizontal: 14,
-    paddingVertical: 14,
-    fontSize: 24,
-    fontWeight: '700',
-    color: Colors.textPrimary,
-    textAlign: 'center',
-  },
-  unitLabel: {
-    fontSize: 16,
-    color: Colors.textSecondary,
-    fontWeight: '500',
   },
 })

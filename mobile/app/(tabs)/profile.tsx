@@ -1,10 +1,8 @@
 import { useState, useEffect, useCallback } from 'react'
-import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Alert, Linking, TextInput, Image } from 'react-native'
+import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Alert, Linking } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useRouter, useFocusEffect } from 'expo-router'
 import { MaterialIcons } from '@expo/vector-icons'
-import AsyncStorage from '@react-native-async-storage/async-storage'
-import * as ImagePicker from 'expo-image-picker'
 import { Colors } from '../../constants/colors'
 import { useAuth } from '../../hooks/useAuth'
 import { useMode, type AppMode } from '../../contexts/ModeContext'
@@ -37,25 +35,17 @@ export default function ProfileScreen() {
   const [streak, setStreak] = useState(0)
   const [totalTaken, setTotalTaken] = useState(0)
   const [activeDays, setActiveDays] = useState(0)
-  const [nickname, setNickname] = useState('')
-  const [avatarUri, setAvatarUri] = useState<string | null>(null)
-  const [editingName, setEditingName] = useState(false)
-  const [tempName, setTempName] = useState('')
 
   const loadStats = useCallback(async () => {
     if (!user) return
     try {
-      const [streakDays, stats, savedName, savedAvatar] = await Promise.all([
+      const [streakDays, stats] = await Promise.all([
         getStreakDays(user.id),
         getProfileStats(user.id),
-        AsyncStorage.getItem(`nickname_${user.id}`),
-        AsyncStorage.getItem(`avatar_${user.id}`),
       ])
       setStreak(streakDays)
       setTotalTaken(stats.totalTaken)
       setActiveDays(stats.activeDays)
-      if (savedName) setNickname(savedName)
-      if (savedAvatar) setAvatarUri(savedAvatar)
     } catch (e) {
       console.error('Failed to load profile stats:', e)
     }
@@ -63,51 +53,7 @@ export default function ProfileScreen() {
 
   useFocusEffect(useCallback(() => { loadStats() }, [loadStats]))
 
-  const displayName = nickname || (user?.email ? user.email.split('@')[0] : '用户')
-
-  const handleEditName = () => {
-    setTempName(displayName)
-    setEditingName(true)
-  }
-
-  const handleSaveName = async () => {
-    const trimmed = tempName.trim()
-    if (!trimmed || !user) {
-      setEditingName(false)
-      return
-    }
-    setNickname(trimmed)
-    setEditingName(false)
-    await AsyncStorage.setItem(`nickname_${user.id}`, trimmed)
-  }
-
-  const handlePickAvatar = async () => {
-    Alert.alert('更换头像', '选择照片来源', [
-      {
-        text: '拍照', onPress: async () => {
-          const perm = await ImagePicker.requestCameraPermissionsAsync()
-          if (!perm.granted) { Alert.alert('提示', '需要相机权限'); return }
-          const res = await ImagePicker.launchCameraAsync({ allowsEditing: true, aspect: [1, 1], quality: 0.6 })
-          if (!res.canceled && res.assets[0] && user) {
-            setAvatarUri(res.assets[0].uri)
-            await AsyncStorage.setItem(`avatar_${user.id}`, res.assets[0].uri)
-          }
-        },
-      },
-      {
-        text: '从相册选择', onPress: async () => {
-          const perm = await ImagePicker.requestMediaLibraryPermissionsAsync()
-          if (!perm.granted) { Alert.alert('提示', '需要相册权限'); return }
-          const res = await ImagePicker.launchImageLibraryAsync({ allowsEditing: true, aspect: [1, 1], quality: 0.6 })
-          if (!res.canceled && res.assets[0] && user) {
-            setAvatarUri(res.assets[0].uri)
-            await AsyncStorage.setItem(`avatar_${user.id}`, res.assets[0].uri)
-          }
-        },
-      },
-      { text: '取消', style: 'cancel' },
-    ])
-  }
+  const username = user?.email ? user.email.split('@')[0] : '用户'
 
   const handleSignOut = () => {
     Alert.alert('退出登录', '确定要退出登录吗？', [
@@ -147,9 +93,8 @@ export default function ProfileScreen() {
   }
 
   const handleContact = () => {
-    Alert.alert('联系我们', '如有问题或建议，请发送邮件给我们', [
-      { text: '发送邮件', onPress: () => Linking.openURL('mailto:ailsacui2312@gmail.com?subject=小猫吃药监督 - 反馈') },
-      { text: '取消', style: 'cancel' },
+    Alert.alert('联系我们', '如有问题或建议，请发送邮件至：\nsupport@catmed.app', [
+      { text: '好的' },
     ])
   }
 
@@ -163,53 +108,17 @@ export default function ProfileScreen() {
         {/* User Info */}
         <View style={styles.userSection}>
           <View style={styles.avatarContainer}>
-            <TouchableOpacity
-              onPress={handlePickAvatar}
-              style={[styles.avatar, { width: s(100), height: s(100), borderRadius: s(50) }]}
-              activeOpacity={0.7}
-            >
-              {avatarUri ? (
-                <Image source={{ uri: avatarUri }} style={{ width: s(100), height: s(100), borderRadius: s(50) }} />
-              ) : (
-                <MaterialIcons name="person" size={si(48)} color={Colors.textMuted} />
-              )}
-              <View style={[styles.cameraOverlay, { width: s(30), height: s(30), borderRadius: s(15) }]}>
-                <MaterialIcons name="camera-alt" size={si(16)} color="#fff" />
-              </View>
-            </TouchableOpacity>
-            {streak > 0 && (
-              <View style={styles.streakBadge}>
-                <MaterialIcons name="local-fire-department" size={si(14)} color="#FF6B35" />
-                <Text style={[styles.streakBadgeText, { fontSize: s(11) }]}>{streak} 天</Text>
-              </View>
-            )}
-          </View>
-          {editingName ? (
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 4 }}>
-              <TextInput
-                style={[styles.nameInput, { fontSize: s(18), paddingHorizontal: s(14), paddingVertical: s(8), borderRadius: s(10) }]}
-                value={tempName}
-                onChangeText={setTempName}
-                autoFocus
-                maxLength={20}
-                onSubmitEditing={handleSaveName}
-                returnKeyType="done"
-              />
-              <TouchableOpacity onPress={handleSaveName}>
-                <MaterialIcons name="check-circle" size={si(28)} color={Colors.primary} />
-              </TouchableOpacity>
+            <View style={[styles.avatar, { width: s(100), height: s(100), borderRadius: s(50) }]}>
+              <MaterialIcons name="person" size={si(48)} color={Colors.textMuted} />
             </View>
-          ) : (
-            <TouchableOpacity
-              onPress={handleEditName}
-              style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 4 }}
-              activeOpacity={0.6}
-            >
-              <Text style={[styles.username, { fontSize: s(20) }]}>{displayName}</Text>
-              <MaterialIcons name="edit" size={si(16)} color={Colors.textMuted} />
-            </TouchableOpacity>
+            {streak > 0 && (
+            <View style={styles.streakBadge}>
+              <MaterialIcons name="local-fire-department" size={si(14)} color="#FF6B35" />
+              <Text style={[styles.streakBadgeText, { fontSize: s(11) }]}>{streak} 天</Text>
+            </View>
           )}
-          <Text style={[styles.emailText, { fontSize: s(12) }]}>{user?.email || ''}</Text>
+          </View>
+          <Text style={[styles.username, { fontSize: s(20) }]}>{username}</Text>
         </View>
 
         {/* Stats Row */}
@@ -230,12 +139,6 @@ export default function ProfileScreen() {
         <Text style={[styles.sectionHeader, { fontSize: s(12) }]}>显示设置</Text>
         <View style={[styles.settingsGroup, { borderRadius: s(16) }]}>
           <SettingsRow icon="text-fields" label="界面模式" value={modeLabel} onPress={handleModeSwitch} s={s} si={si} />
-        </View>
-
-        {/* 家庭共享 */}
-        <Text style={[styles.sectionHeader, { fontSize: s(12) }]}>家庭共享</Text>
-        <View style={[styles.settingsGroup, { borderRadius: s(16) }]}>
-          <SettingsRow icon="family-restroom" label="我的家庭" onPress={() => router.push('/family')} s={s} si={si} />
         </View>
 
         {/* 账户设置 */}
@@ -276,13 +179,10 @@ const styles = StyleSheet.create({
   headerTitle: { fontWeight: '700', color: Colors.textPrimary, paddingTop: 8, paddingBottom: 16 },
   userSection: { alignItems: 'center', marginBottom: 24 },
   avatarContainer: { position: 'relative', marginBottom: 12 },
-  avatar: { backgroundColor: Colors.bgCard, borderWidth: 3, borderColor: Colors.primary, justifyContent: 'center', alignItems: 'center', overflow: 'hidden' },
-  cameraOverlay: { position: 'absolute', bottom: 0, right: 0, backgroundColor: Colors.primary, justifyContent: 'center', alignItems: 'center', borderWidth: 2, borderColor: '#fff' },
+  avatar: { backgroundColor: Colors.bgCard, borderWidth: 3, borderColor: Colors.primary, justifyContent: 'center', alignItems: 'center' },
   streakBadge: { position: 'absolute', bottom: -4, right: -8, flexDirection: 'row', alignItems: 'center', backgroundColor: Colors.bgCard, paddingHorizontal: 8, paddingVertical: 3, borderRadius: 12, gap: 2, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 4, elevation: 2 },
   streakBadgeText: { fontWeight: '700', color: '#FF6B35' },
   username: { fontWeight: '700', color: Colors.textPrimary },
-  emailText: { color: Colors.textMuted, marginTop: 4 },
-  nameInput: { backgroundColor: Colors.bgCard, borderWidth: 1, borderColor: Colors.primary, fontWeight: '600', color: Colors.textPrimary, minWidth: 140, textAlign: 'center' },
   statsRow: { flexDirection: 'row', gap: 12, marginBottom: 28 },
   statCard: { flex: 1, backgroundColor: Colors.bgCard, alignItems: 'center', borderWidth: 1, borderColor: Colors.primary + '1A', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.04, shadowRadius: 8, elevation: 2 },
   statNumber: { fontWeight: '800', color: Colors.textPrimary, marginTop: 8 },

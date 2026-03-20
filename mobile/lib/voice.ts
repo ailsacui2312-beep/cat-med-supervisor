@@ -358,14 +358,6 @@ export async function transcribe(
   // Generate authenticated WebSocket URL
   const wsUrl = createIFlytekUrl(config)
 
-  // WAV files have a 44-byte header; strip it so we send raw PCM to iFlytek
-  const pcmOffset = audioUri.endsWith('.wav') ? 44 : 0
-  const pcmBytes = audioBytes.slice(pcmOffset)
-
-  if (pcmBytes.length < 640) {
-    throw new Error('录音太短，请按住按钮说话后再松开')
-  }
-
   return new Promise<string>((resolve, reject) => {
     let settled = false
     const ws = new WebSocket(wsUrl)
@@ -385,7 +377,7 @@ export async function transcribe(
     }
 
     function sendNextFrame() {
-      const totalFrames = Math.ceil(pcmBytes.length / FRAME_SIZE)
+      const totalFrames = Math.ceil(audioBytes.length / FRAME_SIZE)
       const isFirst = frameIndex === 0
       const isLast = frameIndex >= totalFrames
 
@@ -393,8 +385,8 @@ export async function transcribe(
       let chunkBase64 = ''
       if (!isLast) {
         const start = frameIndex * FRAME_SIZE
-        const end = Math.min(start + FRAME_SIZE, pcmBytes.length)
-        const chunk = pcmBytes.slice(start, end)
+        const end = Math.min(start + FRAME_SIZE, audioBytes.length)
+        const chunk = audioBytes.slice(start, end)
         chunkBase64 = uint8ToBase64(chunk)
       }
 
@@ -482,11 +474,11 @@ export async function transcribe(
       })
     }
 
-    // 30s timeout (longer to allow for slow networks)
+    // 15s timeout
     setTimeout(() => {
       try { ws.close() } catch {}
-      settle(() => reject(new Error('识别超时，请检查网络后重试')))
-    }, 30000)
+      settle(() => reject(new Error('识别超时，请重试')))
+    }, 15000)
   })
 }
 

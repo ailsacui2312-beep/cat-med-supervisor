@@ -184,8 +184,8 @@ export default function MedicationsScreen() {
             <Text style={[styles.medName, { fontSize: s(17) }]}>{item.name}</Text>
             {expiryInfo && (
               <View style={[styles.expiryBadge, { backgroundColor: expiryInfo.color + '15' }]}>
-                <MaterialIcons name="warning" size={si(12)} color={expiryInfo.color} style={{ marginRight: 3 }} />
-                <Text style={[styles.expiryText, { color: expiryInfo.color, fontSize: s(11) }]}>
+                <MaterialIcons name="warning" size={12} color={expiryInfo.color} style={{ marginRight: 3 }} />
+                <Text style={[styles.expiryText, { color: expiryInfo.color }]}>
                   {expiryInfo.text}
                 </Text>
               </View>
@@ -193,11 +193,11 @@ export default function MedicationsScreen() {
           </View>
           {item.illness && (
             <View style={styles.illnessBadge}>
-              <MaterialIcons name="medical-services" size={si(11)} color={Colors.primary} />
-              <Text style={[styles.illnessText, { fontSize: s(11) }]}>{item.illness}</Text>
+              <MaterialIcons name="medical-services" size={11} color={Colors.primary} />
+              <Text style={styles.illnessText}>{item.illness}</Text>
             </View>
           )}
-          <Text style={[styles.medDetail, { fontSize: s(13) }]}>
+          <Text style={styles.medDetail}>
             {item.dosage ? `${item.dosage} ${item.unit}` : item.unit}
             {'  ·  '}
             {FREQUENCY_LABELS[item.frequency]}
@@ -205,21 +205,21 @@ export default function MedicationsScreen() {
           </Text>
           {cycleStatus && (
             <View style={styles.scheduleRow}>
-              <MaterialIcons name="sync" size={si(13)} color={Colors.primary} />
-              <Text style={[styles.scheduleText, { color: Colors.primary, fontSize: s(12) }]}>
+              <MaterialIcons name="sync" size={13} color={Colors.primary} />
+              <Text style={[styles.scheduleText, { color: Colors.primary }]}>
                 {cycleStatus}
               </Text>
             </View>
           )}
           {scheduleText ? (
             <View style={styles.scheduleRow}>
-              <MaterialIcons name="schedule" size={si(13)} color={Colors.textMuted} />
-              <Text style={[styles.scheduleText, { fontSize: s(12) }]}>{scheduleText}</Text>
+              <MaterialIcons name="schedule" size={13} color={Colors.textMuted} />
+              <Text style={styles.scheduleText}>{scheduleText}</Text>
             </View>
           ) : (
             <View style={styles.scheduleRow}>
-              <MaterialIcons name="schedule" size={si(13)} color={Colors.warning} />
-              <Text style={[styles.scheduleText, { color: Colors.warning, fontSize: s(12) }]}>
+              <MaterialIcons name="schedule" size={13} color={Colors.warning} />
+              <Text style={[styles.scheduleText, { color: Colors.warning }]}>
                 未设置提醒时间
               </Text>
             </View>
@@ -279,15 +279,15 @@ export default function MedicationsScreen() {
           }
           ListFooterComponent={<>
             {/* Health Data Summary */}
-            <View style={[styles.healthSection, { borderRadius: s(20), padding: s(16) }]}>
+            <View style={styles.healthSection}>
               <View style={styles.healthHeader}>
-                <Text style={[styles.healthTitle, { fontSize: s(18) }]}>身体数据</Text>
+                <Text style={styles.healthTitle}>身体数据</Text>
                 <TouchableOpacity
-                  style={[styles.healthAddBtn, { paddingHorizontal: s(12), paddingVertical: s(6), borderRadius: s(20) }]}
+                  style={styles.healthAddBtn}
                   onPress={() => setHealthModalVisible(true)}
                 >
-                  <MaterialIcons name="edit-note" size={si(16)} color={Colors.primary} />
-                  <Text style={[styles.healthAddText, { fontSize: s(13) }]}>记录数据</Text>
+                  <MaterialIcons name="edit-note" size={16} color={Colors.primary} />
+                  <Text style={styles.healthAddText}>记录数据</Text>
                 </TouchableOpacity>
               </View>
               <View style={styles.healthCards}>
@@ -304,33 +304,37 @@ export default function MedicationsScreen() {
                   return (
                     <TouchableOpacity
                       key={type}
-                      style={[styles.healthCard, { borderRadius: s(14), padding: s(12) }]}
+                      style={styles.healthCard}
                       onPress={() => router.push(`/health/${type}`)}
                     >
-                      <View style={[styles.healthIconCircle, { backgroundColor: iconInfo.bg, width: s(40), height: s(40), borderRadius: s(20) }]}>
-                        <MaterialIcons name={iconInfo.name as any} size={si(20)} color={iconInfo.color} />
+                      <View style={[styles.healthIconCircle, { backgroundColor: iconInfo.bg }]}>
+                        <MaterialIcons name={iconInfo.name as any} size={20} color={iconInfo.color} />
                       </View>
-                      <Text style={[styles.healthLabel, { fontSize: s(12) }]}>{info.label}</Text>
+                      <Text style={styles.healthLabel}>{info.label}</Text>
                       {record ? (
                         <>
-                          <Text style={[styles.healthValue, { color: rangeColor, fontSize: s(14) }]}>
-                            {type === 'blood_pressure'
-                              ? `${record.value1}/${record.value2 ?? '-'}`
-                              : `${record.value1}`}
+                          <Text style={[styles.healthValue, { color: rangeColor }]}>
+                            {info.format(record)}
                           </Text>
-                          <Text style={[styles.healthUnit, { fontSize: s(10) }]}>{info.defaultUnit}</Text>
-                          <Text style={[styles.healthTime, { fontSize: s(10) }]}>
+                          <Text style={styles.healthUnit}>{info.defaultUnit}</Text>
+                          <Text style={styles.healthTime}>
                             {format(parseISO(record.measured_at), 'MM/dd HH:mm')}
                           </Text>
                         </>
                       ) : (
-                        <Text style={[styles.healthEmpty, { fontSize: s(12) }]}>暂无数据</Text>
+                        <Text style={styles.healthEmpty}>暂无数据</Text>
                       )}
                     </TouchableOpacity>
                   )
                 })}
               </View>
-              {/* 截图识别血糖功能暂时下线 */}
+              <TouchableOpacity
+                style={styles.screenshotBtn}
+                onPress={() => router.push('/health/screenshot')}
+              >
+                <MaterialIcons name="photo-camera" size={16} color={Colors.primary} />
+                <Text style={styles.screenshotBtnText}>截图识别血糖</Text>
+              </TouchableOpacity>
             </View>
 
             {archivedMeds.length > 0 && (

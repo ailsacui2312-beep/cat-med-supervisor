@@ -138,7 +138,7 @@ export default function AddMedicationScreen() {
       await createSchedulesWithReminders(med.id, user.id, times, med)
 
       Alert.alert('添加成功', `${name} 已添加到药柜`, [
-        { text: '好的', onPress: () => router.replace('/(tabs)/medications') },
+        { text: '好的', onPress: () => router.back() },
       ])
     } catch (e: any) {
       Alert.alert('错误', e.message)
