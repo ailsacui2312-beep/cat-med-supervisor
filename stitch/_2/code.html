@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Kitty Pill Monitor - Profile</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#ff9e42",
+                        "background-light": "#fdfaf7",
+                        "background-dark": "#23190f",
+                    },
+                    fontFamily: {
+                        "display": ["Plus Jakarta Sans", "sans-serif"]
+                    },
+                    borderRadius: {"DEFAULT": "0.5rem", "lg": "1rem", "xl": "1.5rem", "full": "9999px"},
+                },
+            },
+        }
+    </script>
+<style>
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+        }
+        .paw-print {
+            opacity: 0.05;
+            position: absolute;
+            pointer-events: none;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background-light dark:bg-background-dark font-display text-slate-900 dark:text-slate-100 antialiased">
+<div class="relative flex min-h-screen w-full flex-col overflow-x-hidden pb-24">
+<!-- Whisker Motifs Background -->
+<div class="absolute top-0 right-0 p-8 text-primary/10">
+<span class="material-symbols-outlined text-9xl">pets</span>
+</div>
+<div class="absolute top-40 left-0 p-8 text-primary/10 -rotate-12">
+<span class="material-symbols-outlined text-7xl">pets</span>
+</div>
+<!-- Header -->
+<div class="flex items-center justify-between px-6 py-6">
+<div class="w-10"></div>
+<h1 class="text-xl font-bold">Profile</h1>
+<button class="flex h-10 w-10 items-center justify-center rounded-full bg-white dark:bg-slate-800 shadow-sm border border-primary/10">
+<span class="material-symbols-outlined text-slate-600 dark:text-slate-300">settings</span>
+</button>
+</div>
+<!-- User Info -->
+<div class="flex flex-col items-center px-6 mb-8">
+<div class="relative">
+<div class="h-32 w-32 rounded-full border-4 border-primary bg-primary/20 p-1">
+<img alt="Cat Parent Avatar" class="h-full w-full rounded-full object-cover" data-alt="Person wearing cute cat ears headband smiling" src="https://lh3.googleusercontent.com/aida-public/AB6AXuD7kZ9BxO_Fqt6g_5b-1V_yAh_mNvTN7XkOFJF84aEt80Ogn6rnqedRuWtlyjhjQC0RzwrhtnpD9kckrGcNbSFZT6KFgWt558NekylEJKO9D6nulh3iJ5hn44QtjEKDHlk_RZ30m_uJiQxPNI72dQIETcjJeXHeou6lHY9C2AaRVonJaqNMX5Kc4YTC-aMUb9Rw9pLmwg4YNuPDIDY1yXBMD7th7ZE4Fe3x6WH_EeFcmivX8mFj7O_Cmo3dswqzlmWCJGDzTBXrYCFd"/>
+</div>
+<div class="absolute bottom-0 right-0 flex h-8 w-8 items-center justify-center rounded-full bg-primary text-white border-2 border-white">
+<span class="material-symbols-outlined text-sm">edit</span>
+</div>
+</div>
+<h2 class="mt-4 text-2xl font-bold">Cat Parent</h2>
+<p class="text-slate-500 dark:text-slate-400">Caring for <span class="text-primary font-semibold">Luna &amp; Oliver</span></p>
+</div>
+<!-- Stats Summary -->
+<div class="flex gap-4 px-6 mb-8">
+<div class="flex-1 flex flex-col items-center gap-2 rounded-xl bg-white dark:bg-slate-800 p-4 shadow-sm border border-primary/10">
+<span class="material-symbols-outlined text-primary text-3xl">medication</span>
+<p class="text-2xl font-bold">128</p>
+<p class="text-xs text-slate-500 dark:text-slate-400 font-medium">Pills Taken Total</p>
+</div>
+<div class="flex-1 flex flex-col items-center gap-2 rounded-xl bg-white dark:bg-slate-800 p-4 shadow-sm border border-primary/10">
+<span class="material-symbols-outlined text-primary text-3xl">calendar_today</span>
+<p class="text-2xl font-bold">45</p>
+<p class="text-xs text-slate-500 dark:text-slate-400 font-medium">Days with Kitty</p>
+</div>
+</div>
+<!-- Settings List -->
+<div class="px-6 space-y-3">
+<h3 class="text-sm font-bold uppercase tracking-wider text-slate-400 px-2 mb-2">Account Settings</h3>
+<!-- Reminders -->
+<div class="flex items-center justify-between rounded-xl bg-white dark:bg-slate-800 p-4 shadow-sm border border-primary/5">
+<div class="flex items-center gap-4">
+<div class="flex h-10 w-10 items-center justify-center rounded-lg bg-orange-100 dark:bg-orange-900/30 text-primary">
+<span class="material-symbols-outlined">notifications_active</span>
+</div>
+<div>
+<p class="font-semibold text-sm">Reminders &amp; Sound</p>
+<p class="text-xs text-slate-500">Meow alerts enabled</p>
+</div>
+</div>
+<div class="h-6 w-11 rounded-full bg-primary relative cursor-pointer">
+<div class="absolute right-1 top-1 h-4 w-4 rounded-full bg-white shadow-sm"></div>
+</div>
+</div>
+<!-- Kitty Interaction -->
+<div class="flex items-center justify-between rounded-xl bg-white dark:bg-slate-800 p-4 shadow-sm border border-primary/5">
+<div class="flex items-center gap-4">
+<div class="flex h-10 w-10 items-center justify-center rounded-lg bg-orange-100 dark:bg-orange-900/30 text-primary">
+<span class="material-symbols-outlined">smart_toy</span>
+</div>
+<div>
+<p class="font-semibold text-sm">Kitty Customization</p>
+<p class="text-xs text-slate-500">Change appearance &amp; actions</p>
+</div>
+</div>
+<span class="material-symbols-outlined text-slate-400">chevron_right</span>
+</div>
+<!-- Health Data -->
+<div class="flex items-center justify-between rounded-xl bg-white dark:bg-slate-800 p-4 shadow-sm border border-primary/5">
+<div class="flex items-center gap-4">
+<div class="flex h-10 w-10 items-center justify-center rounded-lg bg-orange-100 dark:bg-orange-900/30 text-primary">
+<span class="material-symbols-outlined">database</span>
+</div>
+<div>
+<p class="font-semibold text-sm">Health Data Management</p>
+<p class="text-xs text-slate-500">Export medical history</p>
+</div>
+</div>
+<span class="material-symbols-outlined text-slate-400">download</span>
+</div>
+<!-- Family Sharing -->
+<div class="flex items-center justify-between rounded-xl bg-white dark:bg-slate-800 p-4 shadow-sm border border-primary/5">
+<div class="flex items-center gap-4">
+<div class="flex h-10 w-10 items-center justify-center rounded-lg bg-orange-100 dark:bg-orange-900/30 text-primary">
+<span class="material-symbols-outlined">group</span>
+</div>
+<div>
+<p class="font-semibold text-sm">Family Sharing</p>
+<p class="text-xs text-slate-500">2 members monitoring</p>
+</div>
+</div>
+<span class="material-symbols-outlined text-slate-400">chevron_right</span>
+</div>
+</div>
+<!-- Bottom Actions -->
+<div class="mt-10 px-6 flex flex-col items-center gap-4">
+<button class="w-full py-4 rounded-xl bg-red-50 dark:bg-red-900/10 text-red-500 font-bold border border-red-100 dark:border-red-900/20">
+                Log Out
+            </button>
+<p class="text-xs text-slate-400">Kitty Pill Monitor v2.4.0</p>
+</div>
+<!-- Bottom Navigation Bar -->
+<div class="fixed bottom-0 left-0 right-0 z-50 flex items-center justify-around border-t border-primary/10 bg-white/80 dark:bg-background-dark/80 backdrop-blur-lg px-4 pb-6 pt-3">
+<a class="flex flex-col items-center gap-1 text-slate-400" href="#">
+<span class="material-symbols-outlined">today</span>
+<p class="text-[10px] font-medium">Today</p>
+</a>
+<a class="flex flex-col items-center gap-1 text-slate-400" href="#">
+<span class="material-symbols-outlined">medication</span>
+<p class="text-[10px] font-medium">Cabinet</p>
+</a>
+<a class="flex flex-col items-center gap-1 text-slate-400" href="#">
+<span class="material-symbols-outlined">bar_chart</span>
+<p class="text-[10px] font-medium">Stats</p>
+</a>
+<a class="flex flex-col items-center gap-1 text-primary" href="#">
+<span class="material-symbols-outlined fill-1">person</span>
+<p class="text-[10px] font-bold">Profile</p>
+</a>
+</div>
+</div>
+</body></html>

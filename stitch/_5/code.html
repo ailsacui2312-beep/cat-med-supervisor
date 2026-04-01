@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght@400;500;600;700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#ff9e42",
+                        "background-light": "#fdfaf7",
+                        "background-dark": "#23190f",
+                        "surface-light": "#ffffff",
+                        "surface-dark": "#2d231a",
+                    },
+                    fontFamily: {
+                        "display": ["Plus Jakarta Sans", "sans-serif"]
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.5rem",
+                        "lg": "0.875rem",
+                        "xl": "1.5rem",
+                        "full": "9999px"
+                    },
+                },
+            },
+        }
+    </script>
+<style>
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background-light dark:bg-background-dark text-slate-900 dark:text-slate-100 min-h-screen flex flex-col">
+<!-- Header / Profile Section -->
+<header class="p-6 pt-10 flex flex-col items-center gap-4">
+<div class="relative">
+<div class="size-32 rounded-full border-4 border-primary/20 p-1">
+<div class="w-full h-full rounded-full bg-center bg-cover" data-alt="A cute ginger tabby cat portrait" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuCuBaWB2mdLHPNNEuxlKbS9edha6qBOEj_m7MhbgHxYs8VvlxNTbEXI3w3o751E9WzEhI0EenXXqHm_ly3jpNyS9E62VO13jO5MGYO-PqoyXCYAz7k4qI2URzTyqN5UDuwpvUpCqGZDLNF3VvmDEOO3cwFDP-PCOSi234qT2NZmAUTSjc-53qE-KIojg-6MG1sVs8G4QLLB_-H5G7IZboxC__00nMYzB3qNPbyfk7tRp8ZHVs--Nia_7SiYoDLrR71dWtQUdHRVJFrf')">
+</div>
+</div>
+<div class="absolute bottom-1 right-1 bg-primary text-white text-xs font-bold px-2 py-1 rounded-full shadow-lg flex items-center gap-1">
+<span class="material-symbols-outlined text-sm">local_fire_department</span>
+                7 Days
+            </div>
+</div>
+<div class="text-center">
+<h1 class="text-2xl font-bold tracking-tight">Ginger 🐾</h1>
+<p class="text-primary font-medium">Premium Member</p>
+</div>
+</header>
+<!-- Main Content Area -->
+<main class="flex-1 px-4 pb-24 space-y-6">
+<!-- Account Settings -->
+<section>
+<h2 class="text-sm font-bold text-slate-500 uppercase tracking-widest px-2 mb-3 flex items-center gap-2">
+<span class="material-symbols-outlined text-lg">settings</span> Account Settings
+            </h2>
+<div class="bg-surface-light dark:bg-surface-dark rounded-lg shadow-sm overflow-hidden border border-primary/5">
+<button class="w-full flex items-center justify-between p-4 hover:bg-primary/5 transition-colors border-b border-slate-100 dark:border-slate-800">
+<div class="flex items-center gap-3">
+<div class="size-10 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
+<span class="material-symbols-outlined">edit</span>
+</div>
+<span class="font-medium">Edit Profile</span>
+</div>
+<span class="material-symbols-outlined text-slate-400">chevron_right</span>
+</button>
+<button class="w-full flex items-center justify-between p-4 hover:bg-primary/5 transition-colors">
+<div class="flex items-center gap-3">
+<div class="size-10 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
+<span class="material-symbols-outlined">notifications_active</span>
+</div>
+<span class="font-medium">Notification Settings</span>
+</div>
+<span class="material-symbols-outlined text-slate-400">chevron_right</span>
+</button>
+</div>
+</section>
+<!-- Kitty Companion -->
+<section>
+<h2 class="text-sm font-bold text-slate-500 uppercase tracking-widest px-2 mb-3 flex items-center gap-2">
+<span class="material-symbols-outlined text-lg">pets</span> Kitty Companion
+            </h2>
+<div class="bg-surface-light dark:bg-surface-dark rounded-lg shadow-sm overflow-hidden border border-primary/5">
+<button class="w-full flex items-center justify-between p-4 hover:bg-primary/5 transition-colors border-b border-slate-100 dark:border-slate-800">
+<div class="flex items-center gap-3">
+<div class="size-10 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
+<span class="material-symbols-outlined">style</span>
+</div>
+<span class="font-medium">Change Kitty Style</span>
+</div>
+<span class="material-symbols-outlined text-slate-400">chevron_right</span>
+</button>
+<button class="w-full flex items-center justify-between p-4 hover:bg-primary/5 transition-colors">
+<div class="flex items-center gap-3">
+<div class="size-10 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
+<span class="material-symbols-outlined">favorite</span>
+</div>
+<span class="font-medium">Interaction Preferences</span>
+</div>
+<span class="material-symbols-outlined text-slate-400">chevron_right</span>
+</button>
+</div>
+</section>
+<!-- Data & Privacy -->
+<section>
+<h2 class="text-sm font-bold text-slate-500 uppercase tracking-widest px-2 mb-3 flex items-center gap-2">
+<span class="material-symbols-outlined text-lg">security</span> Data &amp; Privacy
+            </h2>
+<div class="bg-surface-light dark:bg-surface-dark rounded-lg shadow-sm overflow-hidden border border-primary/5">
+<button class="w-full flex items-center justify-between p-4 hover:bg-primary/5 transition-colors border-b border-slate-100 dark:border-slate-800">
+<div class="flex items-center gap-3">
+<div class="size-10 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
+<span class="material-symbols-outlined">cloud_sync</span>
+</div>
+<span class="font-medium">Backup &amp; Sync</span>
+</div>
+<span class="material-symbols-outlined text-slate-400">chevron_right</span>
+</button>
+<button class="w-full flex items-center justify-between p-4 hover:bg-primary/5 transition-colors">
+<div class="flex items-center gap-3">
+<div class="size-10 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
+<span class="material-symbols-outlined">download</span>
+</div>
+<span class="font-medium">Export Health Data</span>
+</div>
+<span class="material-symbols-outlined text-slate-400">chevron_right</span>
+</button>
+</div>
+</section>
+<!-- Support -->
+<section>
+<h2 class="text-sm font-bold text-slate-500 uppercase tracking-widest px-2 mb-3 flex items-center gap-2">
+<span class="material-symbols-outlined text-lg">help</span> Support
+            </h2>
+<div class="bg-surface-light dark:bg-surface-dark rounded-lg shadow-sm overflow-hidden border border-primary/5">
+<button class="w-full flex items-center justify-between p-4 hover:bg-primary/5 transition-colors border-b border-slate-100 dark:border-slate-800">
+<div class="flex items-center gap-3">
+<div class="size-10 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
+<span class="material-symbols-outlined">quiz</span>
+</div>
+<span class="font-medium">FAQ</span>
+</div>
+<span class="material-symbols-outlined text-slate-400">chevron_right</span>
+</button>
+<button class="w-full flex items-center justify-between p-4 hover:bg-primary/5 transition-colors">
+<div class="flex items-center gap-3">
+<div class="size-10 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
+<span class="material-symbols-outlined">mail</span>
+</div>
+<span class="font-medium">Contact Us</span>
+</div>
+<span class="material-symbols-outlined text-slate-400">chevron_right</span>
+</button>
+</div>
+</section>
+<!-- Logout Button -->
+<button class="w-full p-4 rounded-lg border-2 border-primary/20 text-primary font-bold hover:bg-primary/5 transition-colors">
+            Sign Out 🐈
+        </button>
+</main>
+<!-- Bottom Navigation Bar -->
+<nav class="fixed bottom-0 left-0 right-0 bg-surface-light dark:bg-surface-dark border-t border-slate-100 dark:border-slate-800 px-6 pb-6 pt-3 flex justify-between items-center z-50">
+<a class="flex flex-col items-center gap-1 group text-slate-400 dark:text-slate-500" href="#">
+<span class="material-symbols-outlined text-2xl group-hover:text-primary transition-colors">calendar_today</span>
+<span class="text-[10px] font-bold uppercase tracking-wider">Today</span>
+</a>
+<a class="flex flex-col items-center gap-1 group text-slate-400 dark:text-slate-500" href="#">
+<span class="material-symbols-outlined text-2xl group-hover:text-primary transition-colors">medication</span>
+<span class="text-[10px] font-bold uppercase tracking-wider">Cabinet</span>
+</a>
+<a class="flex flex-col items-center gap-1 group text-slate-400 dark:text-slate-500" href="#">
+<span class="material-symbols-outlined text-2xl group-hover:text-primary transition-colors">monitoring</span>
+<span class="text-[10px] font-bold uppercase tracking-wider">Stats</span>
+</a>
+<a class="flex flex-col items-center gap-1 group text-primary" href="#">
+<span class="material-symbols-outlined text-2xl fill-1" style="font-variation-settings: 'FILL' 1;">person</span>
+<span class="text-[10px] font-bold uppercase tracking-wider">Profile</span>
+</a>
+</nav>
+</body></html>

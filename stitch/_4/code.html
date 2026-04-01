@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+
+<html lang="zh-CN"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#ff9e42",
+                        "background-light": "#f8f7f5",
+                        "background-dark": "#23190f",
+                    },
+                    fontFamily: {
+                        "display": ["Plus Jakarta Sans", "Noto Sans SC", "sans-serif"]
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.5rem",
+                        "lg": "1rem",
+                        "xl": "1.5rem",
+                        "full": "9999px"
+                    },
+                },
+            },
+        }
+    </script>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+</head>
+<body class="bg-background-light dark:bg-background-dark font-display text-slate-900 dark:text-slate-100 min-h-screen">
+<div class="max-w-md mx-auto min-h-screen flex flex-col bg-white dark:bg-background-dark shadow-xl">
+<!-- Header -->
+<header class="flex items-center justify-between px-6 py-4 sticky top-0 bg-white/80 dark:bg-background-dark/80 backdrop-blur-md z-10">
+<h1 class="text-2xl font-bold tracking-tight">药柜</h1>
+<button class="flex items-center gap-1 bg-primary text-white px-3 py-1.5 rounded-full font-bold hover:opacity-90 transition-opacity"><span class="material-symbols-outlined text-sm">add</span>
+<span class="text-sm">添加药品</span></button>
+</header>
+<main class="flex-1 px-4 pb-24 overflow-y-auto">
+<!-- Section: Medicine List -->
+<section class="mt-4 mb-4">
+<div class="flex items-center justify-between mb-3 px-2">
+<h2 class="text-lg font-bold">正在服用的药物</h2>
+<span class="text-sm text-slate-500">共 3 种</span>
+</div>
+<div class="space-y-4">
+<!-- Med Card 1 -->
+<div class="bg-slate-50 dark:bg-slate-900/40 rounded-xl overflow-hidden flex shadow-sm border border-slate-100 dark:border-slate-800">
+<div class="w-1.5 bg-primary"></div>
+<div class="flex-1 p-4 flex justify-between items-start">
+<div class="space-y-1">
+<div class="flex items-center gap-2">
+<p class="text-primary text-xs font-semibold px-2 py-0.5 bg-primary/10 rounded-full">15/21 天</p>
+<p class="text-xs text-slate-400">进行中</p>
+</div>
+<h3 class="text-lg font-bold pt-1">阿莫西林胶囊</h3>
+<p class="text-sm text-slate-600 dark:text-slate-400">1粒 · 每日一次</p>
+<div class="flex flex-wrap gap-2 mt-2">
+<span class="flex items-center gap-1 text-xs text-slate-500 bg-white dark:bg-slate-800 px-2 py-1 rounded-md border border-slate-100 dark:border-slate-700">
+<span class="material-symbols-outlined text-sm">schedule</span> 08:00
+                                    </span>
+</div>
+</div>
+<div class="w-20 h-20 rounded-lg bg-slate-200 dark:bg-slate-800 overflow-hidden">
+<img class="w-full h-full object-cover" data-alt="Close up of white medicine capsules" src="https://lh3.googleusercontent.com/aida-public/AB6AXuB9s9SKDYNBxFM7dA0e4SxioolyzZAmm9p9HdA4RO5Z7VNGoj6OA7NcpvAKqCl4YacGYur9X7bMvvJLewF4ApxSzFsQ4if3sdzg3xkVnYR8UDWZBfEw9TY-bdwINFo5XZKwABKtQKKfV1KdwDHt5DdHofjHdS0fUnlNgxdOGHIUxR6_n6vfX19EyC7YCcYCNCmG5UZqkp_rq1qTobICDeKK5v5qF4GrnpARGLRLXsGLmBrRcQIRZNZ4urSE1zgWlX-ShPu_hAKd28f_"/>
+</div>
+</div>
+</div>
+<!-- Med Card 2 -->
+<div class="bg-slate-50 dark:bg-slate-900/40 rounded-xl overflow-hidden flex shadow-sm border border-slate-100 dark:border-slate-800">
+<div class="w-1.5 bg-red-400"></div>
+<div class="flex-1 p-4 flex justify-between items-start">
+<div class="space-y-1">
+<div class="flex items-center gap-2">
+<p class="text-red-500 text-xs font-semibold px-2 py-0.5 bg-red-50 dark:bg-red-900/20 rounded-full">⚠️ 剩余5天</p>
+</div>
+<h3 class="text-lg font-bold pt-1">维C银翘片</h3>
+<p class="text-sm text-slate-600 dark:text-slate-400">2片 · 每日三次</p>
+<div class="flex flex-wrap gap-2 mt-2">
+<span class="flex items-center gap-1 text-xs text-slate-500 bg-white dark:bg-slate-800 px-2 py-1 rounded-md border border-slate-100 dark:border-slate-700">
+<span class="material-symbols-outlined text-sm text-primary">notifications_active</span> 07:30, 12:30, 18:30
+                                    </span>
+</div>
+</div>
+<div class="w-20 h-20 rounded-lg bg-slate-200 dark:bg-slate-800 overflow-hidden">
+<img class="w-full h-full object-cover" data-alt="Small round white medicine tablets" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAu_XiQ_YS7jh5pxXyfaGc2XY4GaB9tdIAcF1URF-KlXd_ssoTzfbOmoIRZE5U7pHow5hbX-epNOcl7TEuPseR-fhRXLiaU3LqlM-MlxQhRGhPauEE6mKli4DOCkJn1OjyYq3EB7exkGHzxFBNL9rtMzRhplayW1TwY4mP7n6sgVuVew3dJ8r47bolWTTyfaSx1r9FMfwoxyMBhENQkecZT7boBK33WK8QVYV5dDf6r7X6HfCTYBUrPoHtqBu1H6EoKYYJTLUhva6D9"/>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Section: Health Data -->
+<section class="mt-6 bg-slate-50 dark:bg-slate-900/40 rounded-2xl p-4 border border-slate-100 dark:border-slate-800 mx-2">
+<div class="flex items-center justify-between mb-4 px-1">
+<h2 class="text-base font-bold text-slate-800 dark:text-slate-200">身体数据</h2>
+<button class="flex items-center gap-1.5 bg-primary/10 text-primary px-3 py-1 rounded-full font-bold hover:bg-primary/20 transition-all">
+<span class="material-symbols-outlined text-sm">edit_note</span>
+<span class="text-xs">记录数据</span>
+</button>
+</div>
+<div class="grid grid-cols-3 gap-3">
+<!-- Glucose Card -->
+<div class="bg-white dark:bg-slate-800 p-2.5 rounded-xl flex flex-col items-center text-center shadow-sm border border-slate-50 dark:border-slate-700">
+<div class="w-7 h-7 rounded-full bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center text-orange-600 mb-1.5">
+<span class="material-symbols-outlined text-sm">colorize</span>
+</div>
+<p class="text-[10px] text-slate-500 mb-0.5">血糖</p>
+<div class="flex items-baseline gap-0.5">
+<span class="text-base font-bold">5.6</span>
+<span class="text-[8px] text-slate-400">mmol/L</span>
+</div>
+</div>
+<!-- Blood Pressure Card -->
+<div class="bg-[#FFF9C4]/40 dark:bg-amber-900/20 p-2.5 rounded-xl flex flex-col items-center text-center shadow-sm border border-amber-100 dark:border-amber-900/50">
+<div class="w-7 h-7 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center text-red-600 mb-1.5">
+<span class="material-symbols-outlined text-sm">favorite</span>
+</div>
+<p class="text-[10px] text-slate-700 dark:text-slate-300 mb-0.5">血压</p>
+<div class="flex flex-col items-center">
+<span class="text-base font-bold text-slate-900 dark:text-white">128/82</span>
+<span class="text-[9px] font-medium text-amber-700 bg-amber-200/50 px-1.5 py-0 rounded-full">偏高</span>
+</div>
+</div>
+<!-- Weight Card -->
+<div class="bg-white dark:bg-slate-800 p-2.5 rounded-xl flex flex-col items-center text-center shadow-sm border border-slate-50 dark:border-slate-700">
+<div class="w-7 h-7 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center text-blue-600 mb-1.5">
+<span class="material-symbols-outlined text-sm">monitor_weight</span>
+</div>
+<p class="text-[10px] text-slate-500 mb-0.5">体重</p>
+<div class="flex flex-col items-center">
+<span class="text-base font-bold">64.5</span>
+<div class="flex items-center text-[8px] text-emerald-500">
+<span class="material-symbols-outlined text-[10px]">trending_down</span>
+<span>0.5kg</span>
+</div>
+</div>
+</div>
+</div>
+</section></main>
+<!-- Bottom Navigation Bar -->
+<nav class="fixed bottom-0 left-0 right-0 max-w-md mx-auto bg-white/95 dark:bg-background-dark/95 backdrop-blur-md border-t border-slate-100 dark:border-slate-800 px-6 pb-6 pt-3 flex justify-between items-center z-20">
+<a class="flex flex-col items-center gap-1 text-slate-400" href="#">
+<span class="material-symbols-outlined">pill</span>
+<span class="text-[10px] font-medium uppercase tracking-wider">今天</span>
+</a>
+<a class="flex flex-col items-center gap-1 text-primary" href="#">
+<span class="material-symbols-outlined fill-current">inventory_2</span>
+<span class="text-[10px] font-bold uppercase tracking-wider">药柜</span>
+</a>
+<a class="flex flex-col items-center gap-1 text-slate-400" href="#">
+<span class="material-symbols-outlined">bar_chart</span>
+<span class="text-[10px] font-medium uppercase tracking-wider">记录</span>
+</a>
+</nav>
+</div>
+</body></html>

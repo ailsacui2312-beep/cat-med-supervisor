@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+
+<html lang="zh-CN"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#ff9e42",
+                        "background-light": "#f8f7f5",
+                        "background-dark": "#23190f",
+                    },
+                    fontFamily: {
+                        "display": ["Plus Jakarta Sans"]
+                    },
+                    borderRadius: {"DEFAULT": "0.5rem", "lg": "1rem", "xl": "1.5rem", "full": "9999px"},
+                },
+            },
+        }
+    </script>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background-light dark:bg-background-dark font-display text-slate-900 dark:text-slate-100 min-h-screen">
+<div class="max-w-md mx-auto bg-white dark:bg-background-dark min-h-screen flex flex-col">
+<!-- TopAppBar -->
+<header class="sticky top-0 z-10 bg-white/80 dark:bg-background-dark/80 backdrop-blur-md px-4 py-4 flex items-center justify-between border-b border-primary/10">
+<button class="text-slate-600 dark:text-slate-400 text-base font-medium">取消</button>
+<h1 class="text-slate-900 dark:text-slate-100 text-lg font-bold">添加药品</h1>
+<button class="text-primary text-base font-bold">保存</button>
+</header>
+<main class="flex-1 overflow-y-auto pb-10">
+<!-- Photo Upload Section -->
+<div class="p-4">
+<div class="flex flex-col items-center gap-4 rounded-xl border-2 border-dashed border-primary/20 bg-primary/5 px-6 py-10">
+<div class="bg-primary/10 p-4 rounded-full">
+<span class="material-symbols-outlined text-primary text-4xl">photo_camera</span>
+</div>
+<div class="text-center">
+<p class="text-slate-900 dark:text-slate-100 text-lg font-bold">拍照记录药品</p>
+<p class="text-slate-500 dark:text-slate-400 text-sm">上传药品照片以供AI识别</p>
+</div>
+<button class="flex items-center gap-2 px-6 py-2.5 bg-primary text-white rounded-full font-bold shadow-lg shadow-primary/20 active:scale-95 transition-transform">
+<span class="material-symbols-outlined text-lg">add_a_photo</span>
+<span>立即拍摄</span>
+</button>
+</div>
+</div>
+<!-- Basic Info -->
+<div class="px-4 space-y-6">
+<section>
+<label class="block text-slate-900 dark:text-slate-100 text-base font-bold mb-2">药品名称</label>
+<input class="w-full bg-slate-50 dark:bg-slate-800/50 border-none rounded-xl p-4 focus:ring-2 focus:ring-primary/50 text-slate-900 dark:text-slate-100 placeholder:text-slate-400" placeholder="输入药品名称（如：阿莫西林）" type="text"/>
+</section>
+<!-- Dose & Unit -->
+<section>
+<label class="block text-slate-900 dark:text-slate-100 text-base font-bold mb-2">单次剂量</label>
+<div class="flex gap-3">
+<input class="flex-1 bg-slate-50 dark:bg-slate-800/50 border-none rounded-xl p-4 focus:ring-2 focus:ring-primary/50 text-slate-900 dark:text-slate-100" placeholder="0" type="number"/>
+<div class="flex flex-wrap gap-2 items-center flex-[1.5]">
+<span class="px-3 py-2 bg-primary/10 text-primary border border-primary/30 rounded-lg text-sm font-medium">片/颗</span>
+<span class="px-3 py-2 bg-slate-100 dark:bg-slate-800 text-slate-500 rounded-lg text-sm font-medium">ml</span>
+<span class="px-3 py-2 bg-slate-100 dark:bg-slate-800 text-slate-500 rounded-lg text-sm font-medium">g</span>
+<span class="px-3 py-2 bg-slate-100 dark:bg-slate-800 text-slate-500 rounded-lg text-sm font-medium">滴</span>
+</div>
+</div>
+</section>
+<!-- Frequency -->
+<section>
+<label class="block text-slate-900 dark:text-slate-100 text-base font-bold mb-2">服用频率</label>
+<div class="flex flex-wrap gap-2">
+<button class="px-4 py-2 bg-primary text-white rounded-full text-sm font-bold">每天一次</button>
+<button class="px-4 py-2 bg-primary/10 text-primary border border-primary/20 rounded-full text-sm font-bold">每周一次</button>
+<button class="px-4 py-2 bg-primary/10 text-primary border border-primary/20 rounded-full text-sm font-bold">间隔服用</button>
+<button class="px-4 py-2 bg-primary/10 text-primary border border-primary/20 rounded-full text-sm font-bold">按需服用</button>
+</div>
+</section>
+<!-- Reminder Time -->
+<section>
+<div class="flex items-center justify-between mb-2">
+<label class="text-slate-900 dark:text-slate-100 text-base font-bold">提醒时间</label>
+<button class="text-primary text-sm font-bold flex items-center gap-1">
+<span class="material-symbols-outlined text-sm">add_circle</span>添加时间
+                        </button>
+</div>
+<div class="grid grid-cols-2 gap-3">
+<div class="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-100 dark:border-slate-800">
+<span class="font-bold text-slate-900 dark:text-slate-100">08:30</span>
+<span class="material-symbols-outlined text-slate-400 text-sm">close</span>
+</div>
+<div class="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-100 dark:border-slate-800">
+<span class="font-bold text-slate-900 dark:text-slate-100">20:30</span>
+<span class="material-symbols-outlined text-slate-400 text-sm">close</span>
+</div>
+</div>
+</section>
+<!-- Color Coding -->
+<section>
+<label class="block text-slate-900 dark:text-slate-100 text-base font-bold mb-3">标记颜色</label>
+<div class="flex justify-between items-center">
+<div class="w-8 h-8 rounded-full bg-[#FF6B6B] ring-2 ring-offset-2 ring-primary scale-110 cursor-pointer"></div>
+<div class="w-8 h-8 rounded-full bg-[#FF9E42] cursor-pointer"></div>
+<div class="w-8 h-8 rounded-full bg-[#FFD93D] cursor-pointer"></div>
+<div class="w-8 h-8 rounded-full bg-[#6BCB77] cursor-pointer"></div>
+<div class="w-8 h-8 rounded-full bg-[#4D96FF] cursor-pointer"></div>
+<div class="w-8 h-8 rounded-full bg-[#9B59B6] cursor-pointer"></div>
+<div class="w-8 h-8 rounded-full bg-[#E74C3C] cursor-pointer"></div>
+<div class="w-8 h-8 rounded-full bg-[#34495E] cursor-pointer"></div>
+</div>
+</section>
+<!-- Expiration & Notes -->
+<section class="grid grid-cols-1 gap-4">
+<div>
+<label class="block text-slate-900 dark:text-slate-100 text-base font-bold mb-2">过期日期</label>
+<div class="relative">
+<input class="w-full bg-slate-50 dark:bg-slate-800/50 border-none rounded-xl p-4 focus:ring-2 focus:ring-primary/50 text-slate-900 dark:text-slate-100" type="date"/>
+<span class="material-symbols-outlined absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none">calendar_today</span>
+</div>
+</div>
+<div>
+<label class="block text-slate-900 dark:text-slate-100 text-base font-bold mb-2">备注信息</label>
+<textarea class="w-full bg-slate-50 dark:bg-slate-800/50 border-none rounded-xl p-4 focus:ring-2 focus:ring-primary/50 text-slate-900 dark:text-slate-100 placeholder:text-slate-400" placeholder="添加补充说明（如：饭后服用、避光保存）" rows="3"></textarea>
+</div>
+</section>
+</div>
+</main>
+<!-- Footer Visual Decoration -->
+<div class="p-6 flex justify-center opacity-20">
+<span class="material-symbols-outlined text-6xl text-primary">pets</span>
+</div>
+</div>
+</body></html>
