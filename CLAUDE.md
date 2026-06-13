@@ -58,6 +58,11 @@ cd mobile && npx expo start
 
 > 以下任务由指挥官根据技术扫描自动写入，启动时评估并处理。
 
+### 2026-06-13: 🔴 Supabase 认证绕过漏洞 CVE-2026-31813
+- **内容**：Supabase Auth 存在认证绕过漏洞——启用 Apple/Azure 登录时，对 OIDC ID token 校验不当，攻击者可伪造 ID token 为任意用户签发 session（直接接管账号）。**2.185.0 之前的版本受影响。**
+- **行动**：(1) 核实当前 Supabase（GoTrue/Auth）版本；(2) 升级到 ≥ 2.185.0；(3) CatMed 用 Apple 登录——属于受影响 provider，**与家庭共享 RLS 安全审查合并做，上线前必须完成**。
+- **优先级**：🔴 极高 — 来源: tech-brain 2026-06-13（CVE-2026-31813）
+
 ### 2026-04-01: ⚠️ Axios NPM 供应链污染安全检查
 - **内容**：axios 在 npm 上被投放恶意版本，携带 RAT
 - **行动**：(1) 检查 package.json 中 axios 版本；(2) 运行 `npm audit`；(3) 与 RLS 安全审查合并做，上线前必须完成
