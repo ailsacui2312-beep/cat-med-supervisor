@@ -58,6 +58,11 @@ cd mobile && npx expo start
 
 > 以下任务由指挥官根据技术扫描自动写入，启动时评估并处理。
 
+### 2026-09-26: 🔴 Supabase 客户项目大面积数据裸露（配置问题，不是平台漏洞）
+- **内容**：TechCrunch 9/25 援引 UpGuard 研究——约 **16,000 个 Supabase 数据库**因基础配置不当，把姓名、地址、电话、部分密码/认证 token 直接暴露在公网。Supabase CISO 的回应是「平台提供安全默认值，项目怎么配由客户自己负责」——**责任在项目方**。
+- **行动**：(1) 在 Supabase Dashboard → Advisors → **Security Advisor** 跑一次，清零所有 "RLS disabled" / "policy exists but RLS disabled" 告警；(2) 逐表确认 CatMed 家庭共享数据（宠物、用药记录、家庭成员） 所在的每张表都 `ENABLE ROW LEVEL SECURITY` 且 policy 按 `auth.uid()` 限定；(3) 用**只带 anon key、不登录**的请求直接查各表，确认返回空（这是 UpGuard 的检测方式）；(4) 确认 `service_role` key 没有出现在 App 包、仓库或前端代码里；(5) Storage bucket 逐个确认不是 public。
+- **优先级**：🔴 极高 — 来源: tech-brain 2026-09-26（TechCrunch 9/25 / UpGuard）
+
 ### 2026-06-13: 🔴 Supabase 认证绕过漏洞 CVE-2026-31813
 - **内容**：Supabase Auth 存在认证绕过漏洞——启用 Apple/Azure 登录时，对 OIDC ID token 校验不当，攻击者可伪造 ID token 为任意用户签发 session（直接接管账号）。**2.185.0 之前的版本受影响。**
 - **行动**：(1) 核实当前 Supabase（GoTrue/Auth）版本；(2) 升级到 ≥ 2.185.0；(3) CatMed 用 Apple 登录——属于受影响 provider，**与家庭共享 RLS 安全审查合并做，上线前必须完成**。
